@@ -27,6 +27,15 @@ import { mechanicSearchService } from '../../../services/mechanic/mechanicSearch
 import { ProblemCategory } from '../../../types/requests';
 import { NearbyMechanic } from '../../../types/mechanic';
 import { useResponsive } from '../../../hooks/useResponsive';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { WebFooter } from '../../../components/navigation/WebFooter';
 
 interface QuickService {
   id: string;
@@ -84,6 +93,28 @@ const QUICK_SERVICES: QuickService[] = [
   },
 ];
 
+interface FeaturedLaunchService {
+  id: string;
+  title: string;
+  price: number;
+  icon: keyof typeof Ionicons.glyphMap;
+  category: ProblemCategory;
+}
+
+const FEATURED_2W_SERVICES: FeaturedLaunchService[] = [
+  { id: '2w_diag', title: 'Basic Diagnosis', price: 199, icon: 'search-outline', category: 'general_diagnostics' },
+  { id: '2w_jump', title: 'Battery Jumpstart', price: 299, icon: 'flash-outline', category: 'battery_jumpstart' },
+  { id: '2w_tube', title: 'Tube Puncture Repair', price: 199, icon: 'disc-outline', category: 'flat_tyre' },
+  { id: '2w_tubeless', title: 'Tubeless Puncture Repair', price: 249, icon: 'build-outline', category: 'flat_tyre' },
+];
+
+const FEATURED_4W_SERVICES: FeaturedLaunchService[] = [
+  { id: '4w_diag', title: 'Visual Diagnosis', price: 399, icon: 'search-outline', category: 'general_diagnostics' },
+  { id: '4w_jump', title: 'Battery Jumpstart', price: 499, icon: 'flash-outline', category: 'battery_jumpstart' },
+  { id: '4w_tyre', title: 'Tyre Puncture Repair', price: 299, icon: 'disc-outline', category: 'flat_tyre' },
+  { id: '4w_tow', title: 'Emergency Towing', price: 1200, icon: 'car-sport-outline', category: 'towing_service' },
+];
+
 export default function CustomerDashboardScreen() {
   const { theme, isDark } = useTheme();
   const { isSmallDevice, isTablet, isDesktop, width, horizontalPadding } = useResponsive();
@@ -96,6 +127,33 @@ export default function CustomerDashboardScreen() {
     currentLocation,
     setCurrentLocation,
   } = useCustomerStore();
+
+  const [pricingVehicleType, setPricingVehicleType] = useState<'2W' | '4W'>('2W');
+  const heroOpacity = useSharedValue(0);
+  const heroTranslateY = useSharedValue(14);
+  const pulseOpacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    heroOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
+    heroTranslateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    pulseOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.35, { duration: 800, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedHeroStyle = useAnimatedStyle(() => ({
+    opacity: heroOpacity.value,
+    transform: [{ translateY: heroTranslateY.value }],
+  }));
+
+  const animatedPulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
 
   const [isLocating, setIsLocating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -426,12 +484,20 @@ export default function CustomerDashboardScreen() {
           {/* Left Column (Desktop) / Top Flow (Mobile) */}
           <View style={isDesktop ? styles.desktopLeftCol : undefined}>
             {/* 2. Hero Section: Heading, Subtitle & Professional Illustration */}
-            <View style={styles.heroSection}>
+            <Animated.View style={[styles.heroSection, animatedHeroStyle]}>
+              {/* Standby Pulse Badge */}
+              <View style={[styles.standbyBadge, { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4', borderColor: isDark ? '#166534' : '#BBF7D0' }]}>
+                <Animated.View style={[styles.standbyDot, animatedPulseStyle]} />
+                <Text style={styles.standbyText}>
+                  120+ Verified Mechanics Online • 15–25 Mins Average ETA
+                </Text>
+              </View>
+
               <Text style={[styles.heroHeading, { color: theme.textPrimary }]}>
-                Need vehicle assistance?
+                24/7 Roadside Breakdown Assistance
               </Text>
               <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
-                Find a verified mechanic, anytime, anywhere.
+                Instant GPS mechanic dispatch to your breakdown spot. Official launch pricing with zero hidden charges.
               </Text>
 
               {/* Clean Vector Car with Hazard Warning Cone */}
@@ -439,31 +505,53 @@ export default function CustomerDashboardScreen() {
                 <CarBreakdownIllustration height={135} isDark={isDark} />
               </View>
 
-              {/* Primary Blue "Find Mechanic" Button (STAYS ON HOME SCREEN) */}
-              <Pressable
-                onPress={() => handleFindMechanics()}
-                disabled={isSearching}
-                style={({ pressed }) => [
-                  styles.findMechanicButton,
-                  {
-                    backgroundColor: BRAND_COLORS.primaryBlue,
-                    opacity: pressed || isSearching ? 0.9 : 1,
-                    transform: [{ scale: pressed ? 0.99 : 1 }],
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Find Mechanic"
-              >
-                {isSearching ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                ) : (
-                  <Ionicons name="search" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-                )}
-                <Text style={styles.findMechanicText}>
-                  {isSearching ? 'Searching Garages...' : 'Find Mechanic'}
-                </Text>
-              </Pressable>
-            </View>
+              {/* Dual Action Hero Buttons */}
+              <View style={styles.heroActionsRow}>
+                <Pressable
+                  onPress={() => handleFindMechanics()}
+                  disabled={isSearching}
+                  style={({ pressed }) => [
+                    styles.primaryHeroBtn,
+                    {
+                      backgroundColor: BRAND_COLORS.primaryBlue,
+                      opacity: pressed || isSearching ? 0.9 : 1,
+                      transform: [{ scale: pressed ? 0.98 : 1 }],
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find Nearby Mechanics"
+                >
+                  {isSearching ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                  ) : (
+                    <Ionicons name="search" size={19} color="#FFFFFF" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={styles.primaryHeroBtnText}>
+                    {isSearching ? 'Scanning Garages...' : 'Find Nearby Mechanics'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => router.push('/(customer)/breakdown-request')}
+                  style={({ pressed }) => [
+                    styles.secondaryHeroBtn,
+                    {
+                      borderColor: BRAND_COLORS.primaryBlue,
+                      backgroundColor: isDark ? 'rgba(23, 105, 245, 0.1)' : '#EFF6FF',
+                      opacity: pressed ? 0.85 : 1,
+                      transform: [{ scale: pressed ? 0.98 : 1 }],
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Instant Breakdown Request"
+                >
+                  <Ionicons name="flash" size={18} color={BRAND_COLORS.primaryBlue} style={{ marginRight: 6 }} />
+                  <Text style={[styles.secondaryHeroBtnText, { color: BRAND_COLORS.primaryBlue }]}>
+                    Instant Request
+                  </Text>
+                </Pressable>
+              </View>
+            </Animated.View>
 
             {/* In-Home Radar Search Animation when searching */}
             {isSearching && (
@@ -594,6 +682,174 @@ export default function CustomerDashboardScreen() {
                 </Text>
               </Pressable>
             ) : null}
+
+            {/* Launch Pricing Interactive Showcase (2W & 4W) */}
+            <View style={styles.pricingShowcaseSection}>
+              <View style={styles.pricingSectionHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.pricingSectionTitle, { color: theme.textPrimary }]}>
+                    Official Launch Pricing
+                  </Text>
+                  <Text style={[styles.pricingSectionSub, { color: theme.textSecondary }]}>
+                    Fixed rates from our official price book • Zero surge
+                  </Text>
+                </View>
+
+                {/* 2W vs 4W Segmented Switcher */}
+                <View style={[styles.pricingSegmentWrap, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
+                  <Pressable
+                    onPress={() => setPricingVehicleType('2W')}
+                    style={[
+                      styles.pricingSegmentBtn,
+                      pricingVehicleType === '2W' && [styles.pricingSegmentActive, { backgroundColor: BRAND_COLORS.primaryBlue }],
+                    ]}
+                  >
+                    <Ionicons
+                      name="bicycle"
+                      size={14}
+                      color={pricingVehicleType === '2W' ? '#FFFFFF' : theme.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.pricingSegmentText,
+                        { color: pricingVehicleType === '2W' ? '#FFFFFF' : theme.textSecondary },
+                      ]}
+                    >
+                      2W
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setPricingVehicleType('4W')}
+                    style={[
+                      styles.pricingSegmentBtn,
+                      pricingVehicleType === '4W' && [styles.pricingSegmentActive, { backgroundColor: BRAND_COLORS.primaryBlue }],
+                    ]}
+                  >
+                    <Ionicons
+                      name="car"
+                      size={14}
+                      color={pricingVehicleType === '4W' ? '#FFFFFF' : theme.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.pricingSegmentText,
+                        { color: pricingVehicleType === '4W' ? '#FFFFFF' : theme.textSecondary },
+                      ]}
+                    >
+                      4W
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Pricing Cards Grid */}
+              <View style={styles.pricingCardsGrid}>
+                {(pricingVehicleType === '2W' ? FEATURED_2W_SERVICES : FEATURED_4W_SERVICES).map((item) => (
+                  <Pressable
+                    key={item.id}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(customer)/breakdown-request',
+                        params: { category: item.title },
+                      })
+                    }
+                    style={({ pressed }) => [
+                      styles.pricingCard,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                        opacity: pressed ? 0.9 : 1,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      },
+                    ]}
+                  >
+                    <View style={styles.pricingCardTop}>
+                      <View style={[styles.pricingIconWrap, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
+                        <Ionicons name={item.icon} size={17} color={BRAND_COLORS.primaryBlue} />
+                      </View>
+                      <Text style={[styles.pricingCardAmount, { color: BRAND_COLORS.primaryBlue }]}>
+                        ₹{item.price}
+                      </Text>
+                    </View>
+                    <Text style={[styles.pricingCardTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <View style={styles.pricingCardBottom}>
+                      <Text style={[styles.pricingCardAction, { color: BRAND_COLORS.primaryBlue }]}>
+                        Book Now →
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Pressable
+                onPress={() => router.push('/(customer)/services-pricing')}
+                style={styles.viewAllPricingBtn}
+              >
+                <Text style={styles.viewAllPricingText}>
+                  Explore Full {pricingVehicleType} Launch Price List →
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* How MECHFIND Works (Rapido Style 3-Step) */}
+            <View style={[styles.howItWorksCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: theme.border }]}>
+              <Text style={[styles.howItWorksHeading, { color: theme.textPrimary }]}>
+                How MECHFIND Works
+              </Text>
+              <View style={styles.stepsRow}>
+                <View style={styles.stepItem}>
+                  <View style={[styles.stepNum, { backgroundColor: BRAND_COLORS.primaryBlue }]}>
+                    <Text style={styles.stepNumText}>1</Text>
+                  </View>
+                  <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>Choose Issue</Text>
+                  <Text style={[styles.stepDesc, { color: theme.textSecondary }]}>
+                    Select 2W/4W breakdown service with fixed launch price.
+                  </Text>
+                </View>
+
+                <View style={styles.stepItem}>
+                  <View style={[styles.stepNum, { backgroundColor: BRAND_COLORS.accentTeal }]}>
+                    <Text style={styles.stepNumText}>2</Text>
+                  </View>
+                  <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>15–25m Dispatch</Text>
+                  <Text style={[styles.stepDesc, { color: theme.textSecondary }]}>
+                    Nearest verified mechanic arrives at your GPS location.
+                  </Text>
+                </View>
+
+                <View style={styles.stepItem}>
+                  <View style={[styles.stepNum, { backgroundColor: '#16A34A' }]}>
+                    <Text style={styles.stepNumText}>3</Text>
+                  </View>
+                  <Text style={[styles.stepTitle, { color: theme.textPrimary }]}>Fixed Payout</Text>
+                  <Text style={[styles.stepDesc, { color: theme.textSecondary }]}>
+                    Pay the official verified rate via UPI or Cash. Zero surge fee.
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Trust & Safety Pillars */}
+            <View style={styles.trustGrid}>
+              <View style={[styles.trustItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Ionicons name="shield-checkmark" size={20} color="#16A34A" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.trustTitle, { color: theme.textPrimary }]}>100% Verified Garages</Text>
+                  <Text style={[styles.trustSub, { color: theme.textSecondary }]}>Skills & ID background checked</Text>
+                </View>
+              </View>
+
+              <View style={[styles.trustItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Ionicons name="speedometer" size={20} color={BRAND_COLORS.primaryBlue} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.trustTitle, { color: theme.textPrimary }]}>15–25m Rapid Arrival</Text>
+                  <Text style={[styles.trustSub, { color: theme.textSecondary }]}>Hyper-local GPS routing</Text>
+                </View>
+              </View>
+            </View>
           </View>
 
           {/* Right Column (Desktop) / Bottom Feed (Mobile) */}
@@ -728,6 +984,9 @@ export default function CustomerDashboardScreen() {
           </View>
         </View>
       </View>
+
+      {/* 5. Rapido-Style Professional Web Footer */}
+      <WebFooter />
     </ScreenContainer>
   );
 }
@@ -798,6 +1057,29 @@ const styles = StyleSheet.create({
   heroSection: {
     marginBottom: SPACING.md,
   },
+  standbyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  standbyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16A34A',
+  },
+  standbyText: {
+    color: '#16A34A',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   heroHeading: {
     fontSize: 22,
     fontWeight: '800',
@@ -808,11 +1090,52 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: '400',
     marginBottom: SPACING.sm,
+    lineHeight: 20,
   },
   illustrationWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 4,
+  },
+  heroActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+    flexWrap: 'wrap',
+  },
+  primaryHeroBtn: {
+    flex: 1.2,
+    minWidth: 200,
+    height: 48,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: BRAND_COLORS.primaryBlue,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  primaryHeroBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  secondaryHeroBtn: {
+    flex: 0.9,
+    minWidth: 150,
+    height: 48,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryHeroBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   findMechanicButton: {
     height: 50,
@@ -1134,6 +1457,166 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  pricingShowcaseSection: {
+    marginTop: 16,
+    marginBottom: 16,
+    gap: 10,
+  },
+  pricingSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  pricingSectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  pricingSectionSub: {
+    fontSize: 12,
+  },
+  pricingSegmentWrap: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.sm,
+    padding: 3,
+    gap: 4,
+  },
+  pricingSegmentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.xs,
+  },
+  pricingSegmentActive: {
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  pricingSegmentText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pricingCardsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  pricingCard: {
+    flex: 1,
+    minWidth: 135,
+    padding: 12,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    gap: 6,
+  },
+  pricingCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pricingIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pricingCardAmount: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  pricingCardTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  pricingCardBottom: {
+    marginTop: 2,
+  },
+  pricingCardAction: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  viewAllPricingBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  viewAllPricingText: {
+    color: BRAND_COLORS.primaryBlue,
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  howItWorksCard: {
+    padding: 16,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginVertical: 8,
+    gap: 12,
+  },
+  howItWorksHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  stepsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  stepItem: {
+    flex: 1,
+    minWidth: 120,
+    gap: 4,
+  },
+  stepNum: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  stepNumText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  stepTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  stepDesc: {
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  trustGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  trustItem: {
+    flex: 1,
+    minWidth: 180,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
+  trustTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  trustSub: {
+    fontSize: 11,
   },
   desktopColumnsRow: {
     flexDirection: 'row',
