@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   Linking,
   Platform,
   Pressable,
@@ -99,9 +100,11 @@ export const AppDownloadBanner: React.FC = () => {
           </View>
         ) : (
           <View style={styles.contentRow}>
-            <View style={styles.deviceIconBox}>
-              <Ionicons name="phone-portrait-outline" size={20} color="#1769F5" />
-            </View>
+            <Image
+              source={require('../../../assets/images/mechfind_logo.png')}
+              style={styles.logoBadge}
+              resizeMode="contain"
+            />
             <View style={styles.textCol}>
               <Text style={styles.bannerTitle}>
                 Experience MECHFIND on Mobile
@@ -181,6 +184,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
   },
   textCol: {
     flex: 1,
