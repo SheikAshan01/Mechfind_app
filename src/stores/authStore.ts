@@ -23,8 +23,8 @@ interface AuthState {
 const DEFAULT_CUSTOMER: CustomerUser = {
   id: 'cust_01',
   email: 'customer@mechfind.app',
-  phoneNumber: '+91 98765 43210',
-  fullName: 'Arjun Kapoor',
+  phoneNumber: '',
+  fullName: 'Customer',
   role: 'customer',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -32,25 +32,25 @@ const DEFAULT_CUSTOMER: CustomerUser = {
 
 const DEFAULT_MECHANIC: MechanicUser = {
   id: 'mech_01',
-  email: 'rajesh@apexgagarge.com',
-  phoneNumber: '+91 98201 12345',
-  fullName: 'Rajesh Sharma',
+  email: 'partner@mechfind.app',
+  phoneNumber: '',
+  fullName: 'Partner Technician',
   role: 'mechanic',
-  shopName: 'Apex Speed Garage & Roadside Care',
-  shopAddress: 'Shop 4, Linking Road, Bandra West, Mumbai',
-  yearsOfExperience: 12,
+  shopName: 'Partner Workshop',
+  shopAddress: 'Workshop Location',
+  yearsOfExperience: 5,
   verificationStatus: 'approved',
   isOnline: true,
   serviceRadiusKm: 15,
   vehicleTypes: ['car', 'bike'],
-  specializations: ['Flat Tyre', 'Battery Jumpstart', 'Engine Overheating'],
+  specializations: ['Flat Tyre', 'Battery Jumpstart', 'Engine Diagnostics'],
   documents: {
     idProofUrl: 'verified_id_doc.pdf',
     tradeLicenseUrl: 'verified_trade_license.pdf',
   },
   rating: 4.9,
-  reviewCount: 142,
-  completedJobsCount: 480,
+  reviewCount: 0,
+  completedJobsCount: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const customerUser: CustomerUser = {
       ...DEFAULT_CUSTOMER,
       phoneNumber: phone,
-      fullName: fullName || DEFAULT_CUSTOMER.fullName,
+      fullName: fullName && fullName.trim() ? fullName.trim() : 'Customer',
     };
     await secureStorage.saveTokens('mock_jwt_customer_token', 'mock_refresh_token');
     await AsyncStorage.setItem('@mechfind_user_role', 'customer');
@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const mechanicUser: MechanicUser = {
       ...DEFAULT_MECHANIC,
       phoneNumber: phone,
-      shopName: shopName || DEFAULT_MECHANIC.shopName,
+      shopName: shopName && shopName.trim() ? shopName.trim() : 'Partner Workshop',
       verificationStatus: status,
     };
     await secureStorage.saveTokens('mock_jwt_mechanic_token', 'mock_refresh_token');

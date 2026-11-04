@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -224,6 +224,39 @@ export default function MechanicProfileScreen() {
             </View>
             <Ionicons name="chevron-forward" size={17} color={theme.textTertiary} />
           </Pressable>
+
+          {Platform.OS === 'web' && (
+            <>
+              <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+              <Pressable
+                onPress={() => {
+                  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+                  if (/android/i.test(ua)) {
+                    Linking.openURL('https://github.com/mechfind/app/releases/latest/download/mechfind.apk');
+                  } else if (/iphone|ipad|ipod/i.test(ua)) {
+                    Linking.openURL('https://apps.apple.com/app/mechfind-roadside/id6400000000');
+                  } else {
+                    Linking.openURL('https://github.com/mechfind/app/releases/latest/download/mechfind.apk');
+                  }
+                }}
+                style={styles.manageRow}
+                hitSlop={6}
+              >
+                <View style={styles.manageLeft}>
+                  <Ionicons
+                    name="download-outline"
+                    size={18}
+                    color={BRAND_COLORS.primaryBlue}
+                    style={{ marginRight: 12 }}
+                  />
+                  <Text style={[styles.manageTitle, { color: BRAND_COLORS.primaryBlue, fontWeight: '700' }]}>
+                    Download Mobile App (Android APK / iOS)
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={17} color={BRAND_COLORS.primaryBlue} />
+              </Pressable>
+            </>
+          )}
 
           <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 

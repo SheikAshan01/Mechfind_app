@@ -18,8 +18,8 @@ export default function CustomerOtpScreen() {
   const { theme, isDark } = useTheme();
   const { isSmallDevice, horizontalPadding, isTablet, isDesktop } = useResponsive();
   const params = useLocalSearchParams<{ phone?: string; fullName?: string }>();
-  const phone = params.phone || '9876543210';
-  const fullName = params.fullName || 'Arjun Kapoor';
+  const phone = params.phone || '';
+  const fullName = params.fullName || 'Customer';
 
   const loginCustomer = useAuthStore((state) => state.loginCustomer);
 

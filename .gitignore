@@ -30,9 +30,6 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# Next.js web build
-web/.next/
-web/out/
 .env*.local
 
 # typescript

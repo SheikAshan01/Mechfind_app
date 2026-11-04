@@ -17,9 +17,9 @@ export default function MechanicOtpScreen() {
   const { theme, isDark } = useTheme();
   const { isSmallDevice, horizontalPadding, isTablet, isDesktop } = useResponsive();
   const params = useLocalSearchParams<{ phone?: string; shopName?: string; fullName?: string }>();
-  const phone = params.phone || '9820112345';
-  const shopName = params.shopName || 'Apex Speed Garage';
-  const fullName = params.fullName || 'Rajesh Sharma';
+  const phone = params.phone || '';
+  const shopName = params.shopName || 'Partner Workshop';
+  const fullName = params.fullName || 'Partner Technician';
 
   const [otp, setOtp] = useState('');
   const [timer, setTimer] = useState(45);

@@ -224,7 +224,7 @@ export default function CustomerDashboardScreen() {
 
   const displayLocation = currentLocation.address
     ? currentLocation.address.split(',')[0].trim()
-    : 'Dindigul West';
+    : 'Current Location';
 
   const renderMechanicCardsList = () => {
     if (filteredAndSortedMechanics.length === 0 && hasSearched && !isSearching) {

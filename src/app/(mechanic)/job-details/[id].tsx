@@ -59,16 +59,16 @@ export default function MechanicJobDetailsScreen() {
     }
   };
 
-  const customerName = job?.customerName || 'Arjun Kapoor';
-  const serviceTitle = job?.categoryName || 'Battery Jumpstart';
+  const customerName = job?.customerName || 'Customer';
+  const serviceTitle = job?.categoryName || 'Roadside Assistance';
   const vehicleDesc = job?.vehicle
     ? `${job.vehicle.make} ${job.vehicle.model}${
         job.vehicle.licensePlate ? ` (${job.vehicle.licensePlate})` : ''
       }`
-    : 'Hyundai Creta SX (MH 02 EE 4092)';
+    : 'Customer Vehicle';
   const locationAddress =
-    job?.location?.address || 'SV Road, Near Bandra Station West';
-  const estimateCost = job?.estimatedCost || 400;
+    job?.location?.address || 'Breakdown Coordinates';
+  const estimateCost = job?.estimatedCost || 0;
 
   const renderCustomerCard = () => (
     <Card style={styles.customerCard}>

@@ -77,7 +77,7 @@ export default function CustomerRequestsScreen() {
   };
 
   const formatTimestamp = (dateStr?: string) => {
-    if (!dateStr) return '25 Oct, 10:55 AM';
+    if (!dateStr) return 'Recently';
     try {
       const d = new Date(dateStr);
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -89,7 +89,7 @@ export default function CustomerRequestsScreen() {
       hours = hours % 12 || 12;
       return `${day} ${month}, ${hours}:${minutes} ${ampm}`;
     } catch {
-      return dateStr;
+      return 'Recently';
     }
   };
 
@@ -203,7 +203,7 @@ export default function CustomerRequestsScreen() {
               ? `${item.vehicle.make} ${item.vehicle.model}${
                   item.vehicle.licensePlate ? ` (${item.vehicle.licensePlate})` : ''
                 }`
-              : 'Hyundai Creta SX (MH 02 EE 4092)';
+              : item.categoryName || 'Roadside Assistance';
 
             return (
               <Card

@@ -60,13 +60,13 @@ const INITIAL_INCOMING: BreakdownRequest[] = [
 
 export const useMechanicStore = create<MechanicState>((set, get) => ({
   isOnline: true,
-  activeJob: INITIAL_REQUESTS[0] || null, // req_live_101
-  incomingRequests: INITIAL_INCOMING,
-  completedJobs: [INITIAL_REQUESTS[1]],
+  activeJob: null,
+  incomingRequests: [],
+  completedJobs: [],
   earnings: {
-    today: 850,
-    week: 4200,
-    total: 28400,
+    today: 0,
+    week: 0,
+    total: 0,
   },
 
   toggleOnlineStatus: () => {

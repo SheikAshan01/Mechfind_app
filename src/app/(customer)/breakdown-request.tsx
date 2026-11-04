@@ -113,16 +113,22 @@ export default function BookAssistanceScreen() {
       const activeVeh =
         vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0];
 
+      if (!activeVeh) {
+        setIsSubmitting(false);
+        router.push('/(customer)/vehicle-form');
+        return;
+      }
+
       const problemCategory = mapServiceCategoryToProblemCategory(selectedService.category);
 
       const newRequest = createBreakdownRequest({
-        vehicleId: activeVeh?.id || 'veh_01',
+        vehicleId: activeVeh.id,
         category: problemCategory,
         categoryName: selectedService.serviceName,
         description:
           customIssueText || `${selectedService.serviceName} (${selectedService.vehicleType}) requested roadside`,
         photos: [],
-        landmark: landmarkText || 'Near breakdown location',
+        landmark: landmarkText || 'Breakdown location',
         urgency: 'high',
         estimatedCost: selectedService.customerPrice,
         mechanicId: selectedMechanic?.id,
@@ -255,22 +261,45 @@ export default function BookAssistanceScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.vehicleSummaryRow}>
-        <Ionicons name="car-sport" size={20} color={BRAND_COLORS.primaryBlue} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.vehicleModelText, { color: theme.textPrimary }]}>
-            {activeVehicle?.make} {activeVehicle?.model}
-          </Text>
-          <Text style={[styles.vehiclePlateText, { color: theme.textSecondary }]}>
-            {activeVehicle?.licensePlate} • {activeVehicle?.fuelType?.toUpperCase()}
-          </Text>
+      {activeVehicle ? (
+        <View style={styles.vehicleSummaryRow}>
+          <Ionicons
+            name={activeVehicle.type === 'bike' ? 'bicycle' : 'car-sport'}
+            size={20}
+            color={BRAND_COLORS.primaryBlue}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.vehicleModelText, { color: theme.textPrimary }]}>
+              {activeVehicle.make} {activeVehicle.model}
+            </Text>
+            <Text style={[styles.vehiclePlateText, { color: theme.textSecondary }]}>
+              {activeVehicle.licensePlate} • {activeVehicle.fuelType?.toUpperCase()}
+            </Text>
+          </View>
+          <Pressable onPress={() => router.push('/(customer)/(tabs)/vehicles')}>
+            <Text style={{ color: BRAND_COLORS.primaryBlue, fontSize: 12.5, fontWeight: '600' }}>
+              Change
+            </Text>
+          </Pressable>
         </View>
-        <Pressable onPress={() => router.push('/(customer)/(tabs)/vehicles')}>
-          <Text style={{ color: BRAND_COLORS.primaryBlue, fontSize: 12.5, fontWeight: '600' }}>
-            Change
-          </Text>
-        </Pressable>
-      </View>
+      ) : (
+        <View style={styles.vehicleSummaryRow}>
+          <Ionicons name="alert-circle-outline" size={20} color={BRAND_COLORS.warning} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.vehicleModelText, { color: theme.textPrimary }]}>
+              No Vehicle Added
+            </Text>
+            <Text style={[styles.vehiclePlateText, { color: theme.textSecondary }]}>
+              Add your vehicle details to request roadside help
+            </Text>
+          </View>
+          <Pressable onPress={() => router.push('/(customer)/vehicle-form')}>
+            <Text style={{ color: BRAND_COLORS.primaryBlue, fontSize: 12.5, fontWeight: '700' }}>
+              + Add Vehicle
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </Card>
   );
 

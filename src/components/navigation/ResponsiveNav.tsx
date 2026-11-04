@@ -68,7 +68,7 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer' 
 
   const displayLocation = currentLocation.address
     ? currentLocation.address.split(',')[0].trim()
-    : 'Dindigul West';
+    : 'Current Location';
 
   const customerLinks = [
     { label: 'Home', path: '/(customer)/(tabs)' },

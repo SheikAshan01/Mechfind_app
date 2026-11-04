@@ -69,12 +69,10 @@ class CrudPersistenceService {
         return parsed.filter((v) => !deletedIds.includes(v.id));
       }
 
-      // First run: Seed initial vehicles minus deleted
-      const initial = INITIAL_VEHICLES.filter((v) => !deletedIds.includes(v.id));
-      await AsyncStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(initial));
-      return initial;
+      // First run: return clean empty list for new user
+      return [];
     } catch {
-      return INITIAL_VEHICLES;
+      return [];
     }
   }
 
@@ -138,11 +136,10 @@ class CrudPersistenceService {
         return parsed.filter((r) => !deletedIds.includes(r.id));
       }
 
-      const initial = INITIAL_REQUESTS.filter((r) => !deletedIds.includes(r.id));
-      await AsyncStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(initial));
-      return initial;
+      // First run: return clean empty list for new user
+      return [];
     } catch {
-      return INITIAL_REQUESTS;
+      return [];
     }
   }
 

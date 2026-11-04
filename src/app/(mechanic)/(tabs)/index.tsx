@@ -92,11 +92,11 @@ export default function MechanicDashboardScreen() {
       <View
         style={[
           styles.statBox,
-          { backgroundColor: isDark ? '#1E293B' : '#142235' },
+          { backgroundColor: isDark ? '#1E293B' : BRAND_COLORS.secondaryNavy },
         ]}
       >
         <Text style={styles.statNumber}>
-          {activeJob ? 2 : 1}
+          {activeJob ? 1 : 0}
         </Text>
         <Text style={styles.statLabel}>Active Jobs</Text>
       </View>
@@ -105,11 +105,11 @@ export default function MechanicDashboardScreen() {
       <View
         style={[
           styles.statBox,
-          { backgroundColor: isDark ? '#1E293B' : '#142235' },
+          { backgroundColor: isDark ? '#1E293B' : BRAND_COLORS.secondaryNavy },
         ]}
       >
         <Text style={styles.statNumber}>
-          ₹{(earnings.week || 4200).toLocaleString()}
+          ₹{(earnings.week || 0).toLocaleString()}
         </Text>
         <Text style={styles.statLabel}>This Week</Text>
       </View>
@@ -118,11 +118,11 @@ export default function MechanicDashboardScreen() {
       <View
         style={[
           styles.statBox,
-          { backgroundColor: isDark ? '#1E293B' : '#142235' },
+          { backgroundColor: isDark ? '#1E293B' : BRAND_COLORS.secondaryNavy },
         ]}
       >
-        <Text style={styles.statNumber}>★ 4.9</Text>
-        <Text style={styles.statLabel}>(142 Reviews)</Text>
+        <Text style={styles.statNumber}>★ {user?.rating || 4.9}</Text>
+        <Text style={styles.statLabel}>({user?.reviewCount || 0} Reviews)</Text>
       </View>
     </View>
   );
@@ -202,55 +202,74 @@ export default function MechanicDashboardScreen() {
       </View>
     ) : null;
 
-  const renderActiveJob = () =>
-    activeJob ? (
-      <View style={styles.sectionWrap}>
-        <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>
-          Active Job
-        </Text>
+  const renderActiveJob = () => {
+    if (activeJob) {
+      return (
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>
+            Active Job
+          </Text>
 
-        <Card
-          onPress={() =>
-            router.push({
-              pathname: '/(mechanic)/job-details/[id]',
-              params: { id: activeJob.id },
-            })
-          }
-          style={styles.activeJobCard}
-        >
-          <View style={styles.activeJobRow}>
-            <View
-              style={[
-                styles.activeJobIconBox,
-                { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' },
-              ]}
-            >
-              <Ionicons name="car" size={24} color={BRAND_COLORS.primaryBlue} />
-            </View>
-
-            <View style={styles.activeJobInfoCol}>
-              <View style={styles.activeJobTitleRow}>
-                <Text
-                  style={[styles.activeJobTitle, { color: theme.textPrimary }]}
-                  numberOfLines={1}
-                >
-                  {activeJob.categoryName || 'Battery Jumpstart'}
-                </Text>
-                <View style={styles.onTheWayBadge}>
-                  <Text style={styles.onTheWayText}>On the way</Text>
-                </View>
+          <Card
+            onPress={() =>
+              router.push({
+                pathname: '/(mechanic)/job-details/[id]',
+                params: { id: activeJob.id },
+              })
+            }
+            style={styles.activeJobCard}
+          >
+            <View style={styles.activeJobRow}>
+              <View
+                style={[
+                  styles.activeJobIconBox,
+                  { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' },
+                ]}
+              >
+                <Ionicons name="car" size={24} color={BRAND_COLORS.primaryBlue} />
               </View>
 
-              <Text style={[styles.activeJobVehicle, { color: theme.textSecondary }]}>
-                {activeJob.vehicle?.make || 'Hyundai'} {activeJob.vehicle?.model || 'Creta SX'}
-              </Text>
-            </View>
+              <View style={styles.activeJobInfoCol}>
+                <View style={styles.activeJobTitleRow}>
+                  <Text
+                    style={[styles.activeJobTitle, { color: theme.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {activeJob.categoryName || 'Roadside Assistance'}
+                  </Text>
+                  <View style={styles.onTheWayBadge}>
+                    <Text style={styles.onTheWayText}>Active</Text>
+                  </View>
+                </View>
 
-            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
-          </View>
+                <Text style={[styles.activeJobVehicle, { color: theme.textSecondary }]}>
+                  {activeJob.vehicle?.make || 'Customer'} {activeJob.vehicle?.model || 'Vehicle'}
+                </Text>
+              </View>
+
+              <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+            </View>
+          </Card>
+        </View>
+      );
+    }
+
+    if (!newRequest) {
+      return (
+        <Card style={[styles.activeJobCard, { paddingVertical: 20, alignItems: 'center' }]}>
+          <Ionicons name="radio-outline" size={32} color={BRAND_COLORS.primaryBlue} style={{ marginBottom: 8 }} />
+          <Text style={[styles.activeJobTitle, { color: theme.textPrimary, textAlign: 'center' }]}>
+            Ready for Live Dispatches
+          </Text>
+          <Text style={[styles.activeJobVehicle, { color: theme.textSecondary, textAlign: 'center', marginTop: 4, maxWidth: 320 }]}>
+            You are online. Incoming breakdown assistance requests from motorists within your {user?.serviceRadiusKm || 15} km service radius will appear here.
+          </Text>
         </Card>
-      </View>
-    ) : null;
+      );
+    }
+
+    return null;
+  };
 
   return (
     <ScreenContainer scrollable withPadding={false} edges={['top', 'left', 'right']}>

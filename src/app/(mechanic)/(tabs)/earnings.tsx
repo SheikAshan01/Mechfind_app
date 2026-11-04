@@ -20,21 +20,28 @@ export default function MechanicEarningsScreen() {
 
   const [activeFilter, setActiveFilter] = useState<TimeFilter>('today');
 
+  const totalCompletedCost = completedJobs.reduce(
+    (sum, j) => sum + (j.finalCost || j.estimatedCost || 0),
+    0
+  );
+
   const displayedAmount =
     activeFilter === 'today'
-      ? earnings.today || 850
+      ? earnings.today
       : activeFilter === 'week'
-      ? earnings.week || 4200
-      : 18500;
+      ? earnings.week
+      : earnings.total || totalCompletedCost;
 
   const displayedJobs =
     activeFilter === 'today'
-      ? completedJobs.length || 1
-      : activeFilter === 'week'
-      ? 5
-      : 24;
+      ? completedJobs.filter((j) => {
+          if (!j.completedAt) return true;
+          const today = new Date().toISOString().slice(0, 10);
+          return j.completedAt.slice(0, 10) === today;
+        }).length
+      : completedJobs.length;
 
-  const avgPerJob = Math.round(displayedAmount / (displayedJobs || 1));
+  const avgPerJob = displayedJobs > 0 ? Math.round(displayedAmount / displayedJobs) : 0;
 
   return (
     <ScreenContainer scrollable withPadding={false} edges={['top', 'left', 'right']}>

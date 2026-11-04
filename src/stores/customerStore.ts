@@ -45,10 +45,10 @@ interface CustomerState {
 
 export const useCustomerStore = create<CustomerState>((set, get) => ({
   isInitialized: false,
-  vehicles: INITIAL_VEHICLES,
-  selectedVehicleId: INITIAL_VEHICLES[0]?.id || null,
+  vehicles: [],
+  selectedVehicleId: null,
   nearbyMechanics: MOCK_MECHANICS,
-  requests: INITIAL_REQUESTS,
+  requests: [],
   currentLocation: DEFAULT_COORDINATES,
   searchFilter: '',
   selectedCategoryFilter: 'all',
@@ -153,16 +153,16 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       MOCK_MECHANICS[0];
 
     let custId = 'cust_01';
-    let custName = 'Arjun Kapoor';
-    let custPhone = '+91 98765 43210';
+    let custName = 'Customer';
+    let custPhone = '';
 
     try {
       const { useAuthStore } = require('./authStore');
       const currentUser = useAuthStore.getState().user;
       if (currentUser) {
         custId = currentUser.id;
-        custName = currentUser.fullName;
-        custPhone = currentUser.phoneNumber;
+        custName = currentUser.fullName || 'Customer';
+        custPhone = currentUser.phoneNumber || '';
       }
     } catch {}
 
@@ -270,6 +270,13 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         if (m.id === mechanicId) {
           const newTotalReviews = m.reviewCount + 1;
           const newAvgRating = Math.round(((m.rating * m.reviewCount + rating) / newTotalReviews) * 10) / 10;
+          let reviewerName = 'Customer';
+          try {
+            const { useAuthStore } = require('./authStore');
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser?.fullName) reviewerName = currentUser.fullName;
+          } catch {}
+
           return {
             ...m,
             rating: newAvgRating,
@@ -279,7 +286,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
                 id: `rev_${Date.now()}`,
                 jobId: 'job_recent',
                 customerId: 'cust_01',
-                customerName: 'Arjun Kapoor',
+                customerName: reviewerName,
                 rating,
                 comment,
                 createdAt: 'Just now',
