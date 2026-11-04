@@ -1,25 +1,56 @@
 {
   "expo": {
-    "name": "Mechfind_apps",
-    "slug": "Mechfind_apps",
+    "name": "MECHFIND",
+    "slug": "mechfind",
+    "scheme": "mechfind",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mechfind.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "MECHFIND uses your location to discover nearby mechanics and provide breakdown assistance.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MECHFIND uses your background location while you are actively responding to a breakdown job.",
+        "NSPhotoLibraryUsageDescription": "MECHFIND needs access to photos so you can attach vehicle breakdown images or verification documents.",
+        "NSCameraUsageDescription": "MECHFIND needs camera access to capture vehicle breakdown photos or verification documents."
+      }
     },
     "android": {
+      "package": "com.mechfind.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#080808",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-image",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MECHFIND to use your location for breakdown dispatch and live route navigation."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
