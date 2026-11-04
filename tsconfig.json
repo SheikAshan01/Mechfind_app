@@ -4,6 +4,16 @@
     "strict": true,
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
+    "target": "ESNext",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "customConditions": ["react-native"],
     "types": ["jest"],
     "paths": {
       "@/*": ["src/*"]
@@ -17,8 +27,6 @@
   ],
   "exclude": [
     "node_modules",
-    "web",
-    "web/**/*",
     "dist"
   ]
 }

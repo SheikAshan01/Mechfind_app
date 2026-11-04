@@ -558,7 +558,7 @@ export default function BookAssistanceScreen() {
                 <Pressable
                   onPress={handleConfirmBooking}
                   disabled={isSubmitting}
-                  style={({ pressed }) => [
+                  style={({ pressed }: { pressed: boolean }) => [
                     styles.confirmButton,
                     {
                       backgroundColor: BRAND_COLORS.primaryBlue,
@@ -627,7 +627,7 @@ export default function BookAssistanceScreen() {
               <Pressable
                 onPress={handleConfirmBooking}
                 disabled={isSubmitting}
-                style={({ pressed }) => [
+                style={({ pressed }: { pressed: boolean }) => [
                   styles.confirmButton,
                   {
                     backgroundColor: BRAND_COLORS.primaryBlue,
