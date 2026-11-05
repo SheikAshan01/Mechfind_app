@@ -93,7 +93,7 @@ export default function MechanicWebDashboard() {
   return (
     <ScrollView
       style={[styles.bodyScrollView, { backgroundColor: isDark ? '#101114' : '#F5F6F8' }]}
-      contentContainerStyle={styles.bodyScrollContent}
+      contentContainerStyle={[styles.bodyScrollContent, width < 600 && { padding: 14 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Toast Notification */}
@@ -111,9 +111,9 @@ export default function MechanicWebDashboard() {
         <View style={[styles.leftContentCol, isDesktop ? { flex: 7 } : { width: '100%' }]}>
           {/* 1. Welcome Banner Card */}
           <View style={styles.welcomeBannerCard}>
-            <View style={styles.welcomeBannerTextWrap}>
-              <Text style={styles.welcomeTitleLine1}>Welcome,</Text>
-              <Text style={styles.welcomeTitleLine2}>
+            <View style={[styles.welcomeBannerTextWrap, width < 600 && { padding: 16 }]}>
+              <Text style={[styles.welcomeTitleLine1, width < 450 && { fontSize: 18 }]}>Welcome,</Text>
+              <Text style={[styles.welcomeTitleLine2, width < 450 && { fontSize: 18 }]}>
                 Workshop Partner <Text style={{ color: '#FFFFFF' }}>👋</Text>
               </Text>
               <Text style={styles.welcomeBannerDesc}>
@@ -122,7 +122,7 @@ export default function MechanicWebDashboard() {
             </View>
 
             {/* Right Hero Graphic with Yellow Diagonal Slashes */}
-            <View style={styles.welcomeGraphicWrap}>
+            <View style={[styles.welcomeGraphicWrap, width < 600 && { width: 110, opacity: 0.35 }]}>
               <Svg
                 style={StyleSheet.absoluteFill}
                 viewBox="0 0 340 180"
@@ -153,6 +153,7 @@ export default function MechanicWebDashboard() {
             <View
               style={[
                 styles.metricCard,
+                width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -179,6 +180,7 @@ export default function MechanicWebDashboard() {
             <View
               style={[
                 styles.metricCard,
+                width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -205,6 +207,7 @@ export default function MechanicWebDashboard() {
             <View
               style={[
                 styles.metricCard,
+                width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -231,6 +234,7 @@ export default function MechanicWebDashboard() {
             <View
               style={[
                 styles.metricCard,
+                width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -388,62 +392,78 @@ export default function MechanicWebDashboard() {
                     key={req.id}
                     style={[
                       styles.requestCard,
+                      width < 700 && { flexDirection: 'column', alignItems: 'stretch' },
                       {
                         backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                         borderColor: isDark ? '#23252B' : '#F1F2F4',
                       },
                     ]}
                   >
-                    <View style={styles.jobCardLeftThumb}>
-                      <Image
-                        source={getServiceThumbnail(req.category, req.categoryName)}
-                        style={styles.jobCardThumbImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-
-                    <View style={styles.jobCardDetails}>
-                      <View style={styles.jobCardTopLine}>
-                        <Text
-                          style={[
-                            styles.jobCardTitle,
-                            { color: isDark ? '#FFFFFF' : '#101114' },
-                          ]}
-                        >
-                          {req.categoryName || 'Emergency Assistance'}
-                        </Text>
-                        <View style={styles.incomingStatusPill}>
-                          <Ionicons name="play" size={10} color="#CA8A04" style={{ marginRight: 4 }} />
-                          <Text style={styles.incomingStatusPillText}>Incoming</Text>
-                        </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                      <View style={styles.jobCardLeftThumb}>
+                        <Image
+                          source={getServiceThumbnail(req.category, req.categoryName)}
+                          style={styles.jobCardThumbImage}
+                          resizeMode="contain"
+                        />
                       </View>
 
-                      <Text style={styles.jobCardSubId}>{formatJobId(req.id)}</Text>
-
-                      <View style={styles.jobCardMetaRow}>
-                        <View style={styles.metaItem}>
-                          <Ionicons name="location-outline" size={13} color="#9CA3AF" />
-                          <Text style={styles.metaItemText} numberOfLines={1}>
-                            {req.location?.address || 'SV Road, Dindigul'}
+                      <View style={styles.jobCardDetails}>
+                        <View style={styles.jobCardTopLine}>
+                          <Text
+                            style={[
+                              styles.jobCardTitle,
+                              { color: isDark ? '#FFFFFF' : '#101114' },
+                            ]}
+                          >
+                            {req.categoryName || 'Emergency Assistance'}
                           </Text>
+                          <View style={styles.incomingStatusPill}>
+                            <Ionicons name="play" size={10} color="#CA8A04" style={{ marginRight: 4 }} />
+                            <Text style={styles.incomingStatusPillText}>Incoming</Text>
+                          </View>
                         </View>
-                        <View style={styles.metaItem}>
-                          <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
-                          <Text style={styles.metaItemText}>Today, 10:24 AM</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                          <Ionicons name="navigate-outline" size={13} color="#9CA3AF" />
-                          <Text style={styles.metaItemText}>2.4 km</Text>
+
+                        <Text style={styles.jobCardSubId}>{formatJobId(req.id)}</Text>
+
+                        <View style={styles.jobCardMetaRow}>
+                          <View style={styles.metaItem}>
+                            <Ionicons name="location-outline" size={13} color="#9CA3AF" />
+                            <Text style={styles.metaItemText} numberOfLines={1}>
+                              {req.location?.address || 'SV Road, Dindigul'}
+                            </Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
+                            <Text style={styles.metaItemText}>Today, 10:24 AM</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <Ionicons name="navigate-outline" size={13} color="#9CA3AF" />
+                            <Text style={styles.metaItemText}>2.4 km</Text>
+                          </View>
                         </View>
                       </View>
                     </View>
 
                     {/* Action Buttons: Decline & Accept */}
-                    <View style={styles.requestActionsCol}>
+                    <View
+                      style={[
+                        styles.requestActionsCol,
+                        width < 700 && {
+                          marginTop: 12,
+                          paddingTop: 12,
+                          borderTopWidth: 1,
+                          borderTopColor: isDark ? '#23252B' : '#F1F2F4',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        },
+                      ]}
+                    >
                       <Pressable
                         onPress={() => handleDecline(req.id)}
                         style={[
                           styles.declineBtn,
+                          width < 700 && { flex: 1 },
                           {
                             backgroundColor: isDark ? '#23252B' : '#F3F4F6',
                           },
@@ -461,7 +481,7 @@ export default function MechanicWebDashboard() {
 
                       <Pressable
                         onPress={() => handleAccept(req.id)}
-                        style={styles.acceptBtn}
+                        style={[styles.acceptBtn, width < 700 && { flex: 1, justifyContent: 'center' }]}
                       >
                         <Ionicons name="checkmark" size={15} color="#101114" style={{ marginRight: 4 }} />
                         <Text style={styles.acceptBtnText}>Accept</Text>

@@ -31,6 +31,7 @@ export default function NearbyMechanicsWeb() {
   const { width } = useResponsive();
   const isDesktop = width >= 1024;
   const isTablet = width >= 720 && width < 1024;
+  const isMobile = width < 640;
 
   const { nearbyMechanics, currentLocation, setCurrentLocation } = useCustomerStore();
   const params = useLocalSearchParams<{ filter?: string }>();
@@ -199,6 +200,7 @@ export default function NearbyMechanicsWeb() {
           <View
             style={[
               styles.locationSearchCard,
+              isMobile && { flexDirection: 'column', alignItems: 'stretch' },
               {
                 backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
                 borderColor: isDark ? '#2D3139' : '#E5E7EB',
@@ -234,7 +236,7 @@ export default function NearbyMechanicsWeb() {
             {/* Big Yellow Search CTA */}
             <Pressable
               onPress={() => {}}
-              style={styles.searchSubmitBtn}
+              style={[styles.searchSubmitBtn, isMobile && { width: '100%' }]}
               accessibilityRole="button"
             >
               <Ionicons name="search" size={17} color="#101114" />
@@ -245,7 +247,12 @@ export default function NearbyMechanicsWeb() {
           {/* ========================================================= */}
           {/* SECTION C: FILTER BUTTONS ROW                             */}
           {/* ========================================================= */}
-          <View style={styles.filtersRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersRow}
+            style={{ width: '100%', marginBottom: 16 }}
+          >
             {/* Filter: Nearby */}
             <Pressable
               onPress={() => {
@@ -439,7 +446,7 @@ export default function NearbyMechanicsWeb() {
                 Within 7 km
               </Text>
             </Pressable>
-          </View>
+          </ScrollView>
 
           {/* ========================================================= */}
           {/* SECTION D: TWO-COLUMN DISCOVERY (48% LIST, 52% MAP)       */}
@@ -934,8 +941,9 @@ const styles = StyleSheet.create({
   /* SECTION C: FILTERS ROW */
   filtersRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 10,
+    paddingVertical: 4,
   },
   filterPill: {
     flexDirection: 'row',

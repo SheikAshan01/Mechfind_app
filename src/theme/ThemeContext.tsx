@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useColorScheme as useDeviceColorScheme } from 'react-native';
+import { Platform, useColorScheme as useDeviceColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, ThemeColors } from './colors';
 
@@ -28,6 +28,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mode, setModeState] = useState<ThemeMode>('light'); // Light mode is default per requirements
 
   useEffect(() => {
+    // Inject smooth transition style for web theme switching animation
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'mechfind-theme-transition';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+          html, body, #root, div, span, applet, object, iframe,
+          h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+          a, abbr, acronym, address, big, cite, code,
+          del, dfn, em, img, ins, kbd, q, s, samp,
+          small, strike, strong, sub, sup, tt, var,
+          b, u, i, center, dl, dt, dd, ol, ul, li,
+          fieldset, form, label, legend, table, caption,
+          tbody, tfoot, thead, tr, th, td {
+            transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
     // Load stored preference
     AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
       if (stored === 'light' || stored === 'dark' || stored === 'system') {

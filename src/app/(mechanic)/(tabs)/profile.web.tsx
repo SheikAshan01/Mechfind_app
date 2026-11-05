@@ -16,11 +16,13 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { useAuthStore } from '../../../stores/authStore';
 import { useMechanicStore } from '../../../stores/mechanicStore';
 import { MechanicUser } from '../../../types/auth';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 const ACCENT_YELLOW = '#FFC400';
 
 export default function MechanicWebWorkshopScreen() {
   const { isDark } = useTheme();
+  const { width } = useResponsive();
   const user = useAuthStore((state) => state.user) as MechanicUser | null;
   const updateMechanicProfile = useAuthStore((state) => state.updateMechanicProfile);
 
@@ -54,7 +56,7 @@ export default function MechanicWebWorkshopScreen() {
   return (
     <ScrollView
       style={[styles.scrollRoot, { backgroundColor: isDark ? '#101114' : '#F5F6F8' }]}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, width < 600 && { padding: 14 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Toast Notice */}
@@ -145,7 +147,12 @@ export default function MechanicWebWorkshopScreen() {
       </View>
 
       {/* 3. Sub Tabs: Overview, Team, Timing, Documents */}
-      <View style={styles.subTabsRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.subTabsRow}
+        style={{ width: '100%', flexGrow: 0 }}
+      >
         <Pressable
           onPress={() => setActiveSubTab('overview')}
           style={[
@@ -237,7 +244,7 @@ export default function MechanicWebWorkshopScreen() {
             Documents
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {/* 4. Tab Contents */}
       {activeSubTab === 'overview' && (
@@ -755,7 +762,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    flexWrap: 'wrap',
+    paddingVertical: 4,
   },
   subTabPill: {
     paddingHorizontal: 18,

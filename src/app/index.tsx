@@ -36,28 +36,17 @@ export default function SplashScreen() {
   useEffect(() => {
     if (isLoading) return;
 
-    // On Web, immediately load the responsive app without stalling on splash/mobile onboarding
-    if (Platform.OS === 'web') {
-      if (role === 'mechanic') {
-        router.replace('/(mechanic)/(tabs)');
-      } else {
-        router.replace('/(customer)/(tabs)');
-      }
+    // Initial starting routing: If not authenticated, always show role selection / login page first
+    if (!isAuthenticated) {
+      router.replace('/(auth)/role-select');
       return;
     }
 
-    // On native iOS/Android, route directly to the visual auth flow for unauthenticated users
-    const timer = setTimeout(() => {
-      if (isAuthenticated && role === 'customer') {
-        router.replace('/(customer)/(tabs)');
-      } else if (isAuthenticated && role === 'mechanic') {
-        router.replace('/(mechanic)/(tabs)');
-      } else {
-        router.replace('/(auth)/role-select');
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    if (role === 'mechanic') {
+      router.replace('/(mechanic)/(tabs)');
+    } else {
+      router.replace('/(customer)/(tabs)');
+    }
   }, [isLoading, isAuthenticated, role, isOnboardingCompleted]);
 
   return (

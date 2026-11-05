@@ -245,6 +245,7 @@ export const MechanicPortalShell: React.FC<MechanicPortalShellProps> = ({ childr
         <View
           style={[
             styles.topHeader,
+            width < 600 && { paddingHorizontal: 12 },
             {
               backgroundColor: isDark ? '#101114' : '#FFFFFF',
               borderBottomColor: isDark ? '#1F2024' : '#E5E7EB',
@@ -263,10 +264,18 @@ export const MechanicPortalShell: React.FC<MechanicPortalShellProps> = ({ childr
               </Pressable>
             )}
             <View>
-              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+              <Text
+                style={[
+                  styles.headerTitle,
+                  { color: isDark ? '#FFFFFF' : '#101114' },
+                  width < 420 && { fontSize: 15 },
+                ]}
+              >
                 Mechanic Portal
               </Text>
-              <Text style={styles.headerSubtitle}>Workshop Partner Dashboard</Text>
+              {width >= 420 && (
+                <Text style={styles.headerSubtitle}>Workshop Partner Dashboard</Text>
+              )}
             </View>
           </View>
 
@@ -353,6 +362,7 @@ export const MechanicPortalShell: React.FC<MechanicPortalShellProps> = ({ childr
               onPress={() => setProfileDropdownOpen(!profileDropdownOpen)}
               style={[
                 styles.profilePill,
+                width < 600 && { paddingHorizontal: 6, gap: 4 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#F8FAFC',
                   borderColor: isDark ? '#23242A' : '#E2E8F0',
@@ -365,20 +375,22 @@ export const MechanicPortalShell: React.FC<MechanicPortalShellProps> = ({ childr
                 style={styles.profileBadgeImage}
                 resizeMode="contain"
               />
-              <View style={styles.profileTextCol}>
-                <Text
-                  style={[styles.profileShopName, { color: isDark ? '#FFFFFF' : '#101114' }]}
-                  numberOfLines={1}
-                >
-                  {workshopName}
-                </Text>
-                <Text style={styles.profileRoleText}>Workshop Partner</Text>
-              </View>
+              {width >= 600 && (
+                <View style={styles.profileTextCol}>
+                  <Text
+                    style={[styles.profileShopName, { color: isDark ? '#FFFFFF' : '#101114' }]}
+                    numberOfLines={1}
+                  >
+                    {workshopName}
+                  </Text>
+                  <Text style={styles.profileRoleText}>Workshop Partner</Text>
+                </View>
+              )}
               <Ionicons
                 name="chevron-down"
                 size={14}
                 color={isDark ? '#9CA3AF' : '#64748B'}
-                style={{ marginLeft: 6 }}
+                style={{ marginLeft: width < 600 ? 2 : 6 }}
               />
             </Pressable>
 

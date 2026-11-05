@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   Platform,
   Pressable,
@@ -11,6 +12,7 @@ import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useAuthStore } from '../../stores/authStore';
 import { MechfindLogo } from '../ui/MechfindLogo';
 
 interface ResponsiveNavProps {
@@ -84,10 +86,36 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
   const { isDark, toggleTheme } = useTheme();
   const { width } = useResponsive();
   const pathname = usePathname();
+
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const role = useAuthStore((state) => state.role);
+  const logout = useAuthStore((state) => state.logout);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false);
   const [mobileServicesExpanded, setMobileServicesExpanded] = useState(false);
   const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
+  const [customerProfileDropdown, setCustomerProfileDropdown] = useState(false);
+
+  // Animated rotation for theme toggle icon
+  const themeAnim = useRef(new Animated.Value(0)).current;
+
+  const handleToggleTheme = () => {
+    Animated.timing(themeAnim, {
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
+    }).start(() => {
+      themeAnim.setValue(0);
+    });
+    toggleTheme();
+  };
+
+  const themeSpin = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,6 +132,9 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
     { label: 'My Vehicles', route: '/(customer)/(tabs)/vehicles' },
     { label: 'About', route: '/(customer)/about' },
     { label: 'Contact', route: '/(customer)/contact' },
+    ...(isAuthenticated && role === 'customer'
+      ? [{ label: 'Profile', route: '/(customer)/(tabs)/profile' }]
+      : []),
   ];
 
   const mechanicNavLinks: NavLinkItem[] = [
@@ -426,9 +457,9 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
 
         {/* Right Action Buttons */}
         <View style={styles.rightActionsRow}>
-          {/* Theme Toggle */}
+          {/* Theme Toggle with smooth rotation animation */}
           <Pressable
-            onPress={toggleTheme}
+            onPress={handleToggleTheme}
             style={[
               styles.themeToggleBtn,
               {
@@ -440,11 +471,13 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
             accessibilityRole="button"
             accessibilityLabel="Toggle Theme"
           >
-            <Ionicons
-              name={isDark ? 'moon' : 'sunny'}
-              size={18}
-              color={isDark ? '#FFFFFF' : '#101114'}
-            />
+            <Animated.View style={{ transform: [{ rotate: themeSpin }] }}>
+              <Ionicons
+                name={isDark ? 'sunny' : 'moon'}
+                size={18}
+                color={isDark ? '#FFC400' : '#101114'}
+              />
+            </Animated.View>
           </Pressable>
 
           {/* Become a Mechanic / Customer Portal */}
@@ -479,16 +512,146 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
             </Pressable>
           )}
 
-          {/* Get Started Button */}
-          {isDesktop && !onMechanicPortal && (
-            <Pressable
-              onPress={() => router.push('/(auth)/role-select')}
-              style={styles.getStartedBtn}
-              accessibilityRole="button"
-            >
-              <Text style={styles.getStartedBtnText}>Get Started</Text>
-              <Ionicons name="arrow-forward" size={15} color="#101114" />
-            </Pressable>
+          {/* Customer Profile Icon Button (When Logged in) OR Get Started Button */}
+          {isAuthenticated && role === 'customer' && !onMechanicPortal ? (
+            <View style={{ position: 'relative' }}>
+              <Pressable
+                onPress={() => setCustomerProfileDropdown((prev) => !prev)}
+                style={[
+                  styles.navProfilePill,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#F3F4F6',
+                    borderColor: isDark ? '#2D3139' : '#E5E7EB',
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Customer Profile Menu"
+              >
+                {user?.avatarUrl ? (
+                  <Image
+                    source={{ uri: user.avatarUrl }}
+                    style={styles.navAvatarImg}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.navAvatarFallback}>
+                    <Ionicons name="person" size={15} color="#101114" />
+                  </View>
+                )}
+                {isDesktop && (
+                  <Text
+                    style={[
+                      styles.navProfileName,
+                      { color: isDark ? '#FFFFFF' : '#101114' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {user?.fullName || 'Customer'}
+                  </Text>
+                )}
+                <Ionicons
+                  name={customerProfileDropdown ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color={isDark ? '#9CA3AF' : '#64748B'}
+                />
+              </Pressable>
+
+              {/* Profile Dropdown Menu */}
+              {customerProfileDropdown && (
+                <View
+                  style={[
+                    styles.customerDropdownMenu,
+                    {
+                      backgroundColor: isDark ? '#1C1D22' : '#FFFFFF',
+                      borderColor: isDark ? '#2D3139' : '#E5E7EB',
+                    },
+                  ]}
+                >
+                  <View style={styles.dropdownCustomerHeader}>
+                    <Text
+                      style={[
+                        styles.dropdownCustomerName,
+                        { color: isDark ? '#FFFFFF' : '#101114' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {user?.fullName || 'Customer'}
+                    </Text>
+                    <Text style={styles.dropdownCustomerPhone}>
+                      {user?.phoneNumber || '+91 98765 43210'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.dropdownDivider} />
+
+                  <Pressable
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setCustomerProfileDropdown(false);
+                      router.push('/(customer)/(tabs)/profile');
+                    }}
+                  >
+                    <Ionicons name="person-outline" size={16} color="#FFC400" />
+                    <Text style={[styles.dropdownItemText, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                      My Profile
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setCustomerProfileDropdown(false);
+                      router.push('/(customer)/(tabs)/vehicles');
+                    }}
+                  >
+                    <Ionicons name="car-outline" size={16} color="#FFC400" />
+                    <Text style={[styles.dropdownItemText, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                      My Vehicles
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setCustomerProfileDropdown(false);
+                      router.push('/(customer)/(tabs)/requests');
+                    }}
+                  >
+                    <Ionicons name="calendar-outline" size={16} color="#FFC400" />
+                    <Text style={[styles.dropdownItemText, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                      My Bookings
+                    </Text>
+                  </Pressable>
+
+                  <View style={styles.dropdownDivider} />
+
+                  <Pressable
+                    style={styles.dropdownItem}
+                    onPress={async () => {
+                      setCustomerProfileDropdown(false);
+                      await logout();
+                      router.replace('/(auth)/role-select');
+                    }}
+                  >
+                    <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+                    <Text style={[styles.dropdownItemText, { color: '#EF4444' }]}>
+                      Sign Out
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          ) : (
+            isDesktop && !onMechanicPortal && (
+              <Pressable
+                onPress={() => router.push('/(auth)/role-select')}
+                style={styles.getStartedBtn}
+                accessibilityRole="button"
+              >
+                <Text style={styles.getStartedBtnText}>Get Started</Text>
+                <Ionicons name="arrow-forward" size={15} color="#101114" />
+              </Pressable>
+            )
           )}
 
           {/* Hamburger Menu Toggle (Tablets & Mobile) */}
@@ -682,17 +845,43 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer',
             <Ionicons name="chevron-forward" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
           </Pressable>
 
-          {!onMechanicPortal && (
-            <Pressable
-              onPress={() => {
-                setMobileMenuOpen(false);
-                router.push('/(auth)/role-select');
-              }}
-              style={styles.mobileGetStartedBtn}
-            >
-              <Text style={styles.getStartedBtnText}>Get Started</Text>
-              <Ionicons name="arrow-forward" size={16} color="#101114" />
-            </Pressable>
+          {isAuthenticated && role === 'customer' && !onMechanicPortal ? (
+            <View style={styles.mobileProfileBlock}>
+              <Pressable
+                onPress={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/(customer)/(tabs)/profile');
+                }}
+                style={styles.mobileProfileBtn}
+              >
+                <Ionicons name="person-circle-outline" size={20} color="#101114" />
+                <Text style={styles.mobileProfileBtnText}>My Profile</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  setMobileMenuOpen(false);
+                  await logout();
+                  router.replace('/(auth)/role-select');
+                }}
+                style={styles.mobileSignOutBtn}
+              >
+                <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                <Text style={styles.mobileSignOutText}>Sign Out</Text>
+              </Pressable>
+            </View>
+          ) : (
+            !onMechanicPortal && (
+              <Pressable
+                onPress={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/(auth)/role-select');
+                }}
+                style={styles.mobileGetStartedBtn}
+              >
+                <Text style={styles.getStartedBtnText}>Get Started</Text>
+                <Ionicons name="arrow-forward" size={16} color="#101114" />
+              </Pressable>
+            )
           )}
         </View>
       )}
@@ -991,5 +1180,114 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFC400',
     marginTop: 8,
     marginBottom: 6,
+  },
+  // Customer Profile Pill & Menu
+  navProfilePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  navAvatarImg: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  navAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFC400',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navProfileName: {
+    fontSize: 13,
+    fontWeight: '700',
+    maxWidth: 120,
+  },
+  customerDropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
+    width: 220,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 8,
+    zIndex: 1000,
+    elevation: 10,
+    shadowColor: '#000000',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+  },
+  dropdownCustomerHeader: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  dropdownCustomerName: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  dropdownCustomerPhone: {
+    fontSize: 11,
+    color: '#747B87',
+    marginTop: 2,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#2D3139',
+    marginVertical: 4,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 10,
+  },
+  dropdownItemText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  mobileProfileBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  mobileProfileBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFC400',
+    gap: 6,
+  },
+  mobileProfileBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#101114',
+  },
+  mobileSignOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    gap: 6,
+  },
+  mobileSignOutText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#EF4444',
   },
 });

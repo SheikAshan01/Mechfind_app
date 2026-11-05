@@ -100,7 +100,7 @@ export default function MechanicWebDispatchesScreen() {
   return (
     <ScrollView
       style={[styles.scrollRoot, { backgroundColor: isDark ? '#101114' : '#F5F6F8' }]}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, width < 600 && { padding: 14 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Header Row: Title & Subtitle + Live Updates Badge */}
@@ -133,7 +133,12 @@ export default function MechanicWebDispatchesScreen() {
       {/* 2. Filter Pills & Search Input Row */}
       <View style={styles.filterAndSearchRow}>
         {/* Filter Pills */}
-        <View style={styles.filterPillsGroup}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterPillsGroup}
+          style={{ width: '100%', flexGrow: 0 }}
+        >
           <Pressable
             onPress={() => setActiveFilter('all')}
             style={[
@@ -225,12 +230,13 @@ export default function MechanicWebDispatchesScreen() {
               Completed ({completedCount})
             </Text>
           </Pressable>
-        </View>
+        </ScrollView>
 
         {/* Search Input */}
         <View
           style={[
             styles.searchBarBox,
+            width < 600 && { minWidth: 0, width: '100%', maxWidth: '100%' },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#E5E7EB',
@@ -264,87 +270,102 @@ export default function MechanicWebDispatchesScreen() {
               key={req.id}
               style={[
                 styles.dispatchCard,
+                width < 700 && { flexDirection: 'column', alignItems: 'stretch' },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#E5E7EB',
                 },
               ]}
             >
-              {/* Thumbnail */}
-              <View style={styles.cardThumbnailBox}>
-                <Image
-                  source={getServiceThumbnail(req.category, req.categoryName)}
-                  style={styles.cardThumbImage}
-                  resizeMode="contain"
-                />
-              </View>
-
-              {/* Information */}
-              <View style={styles.cardDetailsCol}>
-                <View style={styles.cardHeaderLine}>
-                  <Text
-                    style={[
-                      styles.cardJobTitle,
-                      { color: isDark ? '#FFFFFF' : '#101114' },
-                    ]}
-                  >
-                    {req.categoryName || 'Vehicle Service'}
-                  </Text>
-
-                  {/* Status Pill */}
-                  {type === 'incoming' && (
-                    <View style={styles.incomingPill}>
-                      <Ionicons name="play" size={10} color="#CA8A04" style={{ marginRight: 4 }} />
-                      <Text style={styles.incomingPillText}>Incoming</Text>
-                    </View>
-                  )}
-                  {type === 'active' && (
-                    <View style={styles.activePill}>
-                      <Ionicons name="play" size={10} color="#16A34A" style={{ marginRight: 4 }} />
-                      <Text style={styles.activePillText}>Active</Text>
-                    </View>
-                  )}
-                  {type === 'completed' && (
-                    <View style={styles.completedPill}>
-                      <Ionicons name="checkmark" size={10} color="#15803D" style={{ marginRight: 4 }} />
-                      <Text style={styles.completedPillText}>Completed</Text>
-                    </View>
-                  )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                {/* Thumbnail */}
+                <View style={styles.cardThumbnailBox}>
+                  <Image
+                    source={getServiceThumbnail(req.category, req.categoryName)}
+                    style={styles.cardThumbImage}
+                    resizeMode="contain"
+                  />
                 </View>
 
-                <Text style={styles.cardJobId}>{formatJobId(req.id)}</Text>
+                {/* Information */}
+                <View style={styles.cardDetailsCol}>
+                  <View style={styles.cardHeaderLine}>
+                    <Text
+                      style={[
+                        styles.cardJobTitle,
+                        { color: isDark ? '#FFFFFF' : '#101114' },
+                      ]}
+                    >
+                      {req.categoryName || 'Vehicle Service'}
+                    </Text>
 
-                {/* Metadata Row */}
-                <View style={styles.metaRow}>
-                  <View style={styles.metaCol}>
-                    <Ionicons name="location-outline" size={14} color="#9CA3AF" />
-                    <Text style={styles.metaText} numberOfLines={1}>
-                      {req.location?.address || 'Dindigul West, Dindigul'}
-                    </Text>
+                    {/* Status Pill */}
+                    {type === 'incoming' && (
+                      <View style={styles.incomingPill}>
+                        <Ionicons name="play" size={10} color="#CA8A04" style={{ marginRight: 4 }} />
+                        <Text style={styles.incomingPillText}>Incoming</Text>
+                      </View>
+                    )}
+                    {type === 'active' && (
+                      <View style={styles.activePill}>
+                        <Ionicons name="play" size={10} color="#16A34A" style={{ marginRight: 4 }} />
+                        <Text style={styles.activePillText}>Active</Text>
+                      </View>
+                    )}
+                    {type === 'completed' && (
+                      <View style={styles.completedPill}>
+                        <Ionicons name="checkmark" size={10} color="#15803D" style={{ marginRight: 4 }} />
+                        <Text style={styles.completedPillText}>Completed</Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={styles.metaCol}>
-                    <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
-                    <Text style={styles.metaText}>
-                      {type === 'completed' ? '28 Oct, 02:10 PM' : 'Today, 10:24 AM'}
-                    </Text>
-                  </View>
-                  <View style={styles.metaCol}>
-                    <Ionicons name="navigate-outline" size={14} color="#9CA3AF" />
-                    <Text style={styles.metaText}>
-                      {type === 'incoming' ? '2.4 km' : type === 'active' ? '3.8 km' : '6.0 km'}
-                    </Text>
+
+                  <Text style={styles.cardJobId}>{formatJobId(req.id)}</Text>
+
+                  {/* Metadata Row */}
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaCol}>
+                      <Ionicons name="location-outline" size={14} color="#9CA3AF" />
+                      <Text style={styles.metaText} numberOfLines={1}>
+                        {req.location?.address || 'Dindigul West, Dindigul'}
+                      </Text>
+                    </View>
+                    <View style={styles.metaCol}>
+                      <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
+                      <Text style={styles.metaText}>
+                        {type === 'completed' ? '28 Oct, 02:10 PM' : 'Today, 10:24 AM'}
+                      </Text>
+                    </View>
+                    <View style={styles.metaCol}>
+                      <Ionicons name="navigate-outline" size={14} color="#9CA3AF" />
+                      <Text style={styles.metaText}>
+                        {type === 'incoming' ? '2.4 km' : type === 'active' ? '3.8 km' : '6.0 km'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
 
               {/* Action Buttons based on Job Type */}
-              <View style={styles.actionsBox}>
+              <View
+                style={[
+                  styles.actionsBox,
+                  width < 700 && {
+                    width: '100%',
+                    marginTop: 12,
+                    paddingTop: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: isDark ? '#23252B' : '#F1F2F4',
+                  },
+                ]}
+              >
                 {type === 'incoming' ? (
-                  <View style={styles.incomingBtnGroup}>
+                  <View style={[styles.incomingBtnGroup, width < 700 && { width: '100%' }]}>
                     <Pressable
                       onPress={() => rejectRequest(req.id)}
                       style={[
                         styles.declineButton,
+                        width < 700 && { flex: 1 },
                         { backgroundColor: isDark ? '#23252B' : '#F3F4F6' },
                       ]}
                     >
@@ -360,7 +381,7 @@ export default function MechanicWebDispatchesScreen() {
 
                     <Pressable
                       onPress={() => acceptRequest(req.id)}
-                      style={styles.acceptButton}
+                      style={[styles.acceptButton, width < 700 && { flex: 1, justifyContent: 'center' }]}
                     >
                       <Ionicons name="checkmark" size={15} color="#101114" style={{ marginRight: 4 }} />
                       <Text style={styles.acceptButtonText}>Accept</Text>
@@ -371,6 +392,7 @@ export default function MechanicWebDispatchesScreen() {
                     onPress={() => setSelectedJobForModal(req)}
                     style={[
                       styles.viewDetailsButton,
+                      width < 700 && { width: '100%', justifyContent: 'center' },
                       {
                         backgroundColor: isDark ? '#23252B' : '#F8FAFC',
                         borderColor: isDark ? '#2D3139' : '#E2E8F0',

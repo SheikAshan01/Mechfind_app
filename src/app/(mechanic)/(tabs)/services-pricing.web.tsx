@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme/ThemeContext';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 const ACCENT_YELLOW = '#FFC400';
 
@@ -93,6 +94,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
 
 export default function MechanicWebServicesPricingScreen() {
   const { isDark } = useTheme();
+  const { width } = useResponsive();
 
   const [services, setServices] = useState<ServiceItem[]>(INITIAL_SERVICES);
   const [filterTab, setFilterTab] = useState<'all' | 'active' | 'inactive'>('all');
@@ -187,7 +189,7 @@ export default function MechanicWebServicesPricingScreen() {
   return (
     <ScrollView
       style={[styles.scrollRoot, { backgroundColor: isDark ? '#101114' : '#F5F6F8' }]}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, width < 600 && { padding: 14 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Header Row: Title & Subtitle + Add Service Button */}
@@ -210,7 +212,12 @@ export default function MechanicWebServicesPricingScreen() {
       {/* 2. Filter Tabs & Search Bar */}
       <View style={styles.filtersBar}>
         {/* Filter Tabs */}
-        <View style={styles.tabsRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsRow}
+          style={{ width: '100%', flexGrow: 0 }}
+        >
           <Pressable
             onPress={() => setFilterTab('all')}
             style={[
@@ -279,12 +286,13 @@ export default function MechanicWebServicesPricingScreen() {
               Inactive ({inactiveCount})
             </Text>
           </Pressable>
-        </View>
+        </ScrollView>
 
         {/* Search Input */}
         <View
           style={[
             styles.searchBox,
+            width < 600 && { width: '100%', minWidth: 0 },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#E5E7EB',
@@ -311,15 +319,22 @@ export default function MechanicWebServicesPricingScreen() {
       </View>
 
       {/* 3. Services Responsive Table Card */}
-      <View
-        style={[
-          styles.tableCard,
-          {
-            backgroundColor: isDark ? '#16171B' : '#FFFFFF',
-            borderColor: isDark ? '#23252B' : '#E5E7EB',
-          },
-        ]}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ width: '100%', borderRadius: 16 }}
+        contentContainerStyle={{ minWidth: width < 768 ? 640 : '100%' }}
       >
+        <View
+          style={[
+            styles.tableCard,
+            {
+              width: '100%',
+              backgroundColor: isDark ? '#16171B' : '#FFFFFF',
+              borderColor: isDark ? '#23252B' : '#E5E7EB',
+            },
+          ]}
+        >
         {/* Table Header */}
         <View
           style={[
@@ -427,6 +442,7 @@ export default function MechanicWebServicesPricingScreen() {
           </View>
         )}
       </View>
+      </ScrollView>
 
       {/* Add Service Modal */}
       {addModalOpen && (

@@ -24,6 +24,7 @@ export default function WebsiteHomeScreen() {
 
   const isDesktop = width >= 1100;
   const isTablet = width >= 720 && width < 1100;
+  const isMobile = width < 640;
 
   const [locationInput, setLocationInput] = useState('');
   const [isLocating, setIsLocating] = useState(false);
@@ -213,7 +214,13 @@ export default function WebsiteHomeScreen() {
                 </View>
 
                 {/* Main Headline */}
-                <Text style={styles.heroMainTitle}>
+                <Text
+                  style={[
+                    styles.heroMainTitle,
+                    width < 440 && { fontSize: 30, lineHeight: 38 },
+                    width >= 440 && width < 768 && { fontSize: 36, lineHeight: 44 },
+                  ]}
+                >
                   On-Demand{'\n'}Vehicle Service{'\n'}
                   <Text style={styles.heroMainTitleYellow}>at Your Doorstep</Text>
                 </Text>
@@ -225,7 +232,7 @@ export default function WebsiteHomeScreen() {
                 </Text>
 
                 {/* Location Search Bar */}
-                <View style={styles.searchBarBox}>
+                <View style={[styles.searchBarBox, isMobile && styles.searchBarBoxMobile]}>
                   <View style={styles.searchBarInputRow}>
                     <Ionicons
                       name="location-outline"
@@ -256,16 +263,30 @@ export default function WebsiteHomeScreen() {
                       )}
                     </Pressable>
 
-                    {/* Submit CTA */}
+                    {/* Desktop Submit CTA */}
+                    {!isMobile && (
+                      <Pressable
+                        style={styles.searchCtaBtn}
+                        onPress={handleSearchMechanics}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.searchCtaBtnText}>Find a Mechanic</Text>
+                        <Ionicons name="arrow-forward" size={16} color="#101114" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Mobile Full-Width Submit CTA */}
+                  {isMobile && (
                     <Pressable
-                      style={styles.searchCtaBtn}
+                      style={styles.searchCtaBtnMobile}
                       onPress={handleSearchMechanics}
                       accessibilityRole="button"
                     >
                       <Text style={styles.searchCtaBtnText}>Find a Mechanic</Text>
                       <Ionicons name="arrow-forward" size={16} color="#101114" />
                     </Pressable>
-                  </View>
+                  )}
                 </View>
 
                 {/* 7 KM Radius Quick Search Feature Pill */}
@@ -403,13 +424,19 @@ export default function WebsiteHomeScreen() {
         <View style={[styles.sectionWrapper, { backgroundColor: isDark ? '#101114' : '#FFFFFF' }]}>
           <View style={styles.sectionContainer}>
             {/* Header with Title + "View All Services ->" */}
-            <View style={styles.servicesHeaderRow}>
-              <View>
+            <View
+              style={[
+                styles.servicesHeaderRow,
+                isMobile && { flexDirection: 'column', alignItems: 'flex-start', gap: 12 },
+              ]}
+            >
+              <View style={{ maxWidth: '100%' }}>
                 <Text style={styles.sectionEyebrow}>OUR SERVICES</Text>
                 <Text
                   style={[
                     styles.sectionTitle,
                     { color: isDark ? '#FFFFFF' : '#101114' },
+                    isMobile && { fontSize: 22, lineHeight: 28 },
                   ]}
                 >
                   Complete Vehicle Care Services
@@ -487,7 +514,7 @@ export default function WebsiteHomeScreen() {
                   </View>
 
                   <Image
-                    source={require('../../../../assets/images/web-car-care-banner.png')}
+                    source={require('../../../../assets/images/web-car-care-car.png')}
                     style={styles.promoCarImg}
                     resizeMode="cover"
                   />
@@ -573,7 +600,7 @@ export default function WebsiteHomeScreen() {
                 {/* Right: Headlines + Store Buttons */}
                 <View style={styles.appCopyCol}>
                   <Text style={styles.appSectionEyebrow}>MECHFIND APP</Text>
-                  <Text style={styles.appDownloadTitle}>
+                  <Text style={[styles.appDownloadTitle, isMobile && { fontSize: 24, lineHeight: 30 }]}>
                     Download the MECHFIND App
                   </Text>
                   <Text style={styles.appDownloadDesc}>
@@ -885,6 +912,10 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
   },
+  searchBarBoxMobile: {
+    padding: 10,
+    gap: 8,
+  },
   searchBarInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -911,6 +942,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  searchCtaBtnMobile: {
+    backgroundColor: '#FFC400',
+    borderRadius: 12,
+    width: '100%',
+    height: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 4,
   },
   searchCtaBtnText: {
     color: '#101114',
@@ -1089,7 +1131,8 @@ const styles = StyleSheet.create({
   },
   promoBannerRight: {
     flex: 0.95,
-    minWidth: 320,
+    minWidth: 0,
+    width: '100%',
   },
   promoBannerCard: {
     backgroundColor: '#101114',
@@ -1097,8 +1140,8 @@ const styles = StyleSheet.create({
     padding: 26,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 260,
-    justifyContent: 'space-between',
+    minHeight: 280,
+    justifyContent: 'center',
   },
   bannerYellowCornerSlice: {
     position: 'absolute',
@@ -1106,17 +1149,17 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     height: 0,
-    borderTopWidth: 60,
-    borderRightWidth: 60,
+    borderTopWidth: 54,
+    borderRightWidth: 54,
     borderTopColor: '#FFC400',
     borderRightColor: '#FFC400',
     borderBottomColor: 'transparent',
     borderLeftColor: 'transparent',
-    zIndex: 2,
+    zIndex: 4,
   },
   promoBannerContent: {
     zIndex: 3,
-    marginBottom: 14,
+    maxWidth: '56%',
   },
   promoBannerHeadline: {
     fontSize: 24,
@@ -1129,18 +1172,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   promoCheckText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#C7C9CE',
+    color: '#E5E7EB',
   },
   promoCarImg: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    marginTop: 10,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: '54%',
+    height: '100%',
+    zIndex: 1,
   },
   // 4. Why Choose MECHFIND
   featuresRow: {
@@ -1195,11 +1241,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   appDownloadCard: {
-    backgroundColor: '#1A1B1F',
+    backgroundColor: '#101114',
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#2D3139',
-    padding: 32,
+    padding: 36,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -1210,6 +1256,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: '#FFC400',
+    borderTopLeftRadius: 24,
   },
   appCornerYellowBottomRight: {
     position: 'absolute',
@@ -1218,6 +1265,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: '#FFC400',
+    borderBottomRightRadius: 24,
   },
   appDownloadRow: {
     alignItems: 'center',
@@ -1236,8 +1284,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   appMockupImg: {
-    width: 320,
-    height: 220,
+    width: 360,
+    height: 280,
+    maxWidth: '100%',
   },
   appCopyCol: {
     flex: 1.2,

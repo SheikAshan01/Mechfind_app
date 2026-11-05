@@ -11,11 +11,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useMechanicStore } from '../../../stores/mechanicStore';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 const ACCENT_YELLOW = '#FFC400';
 
 export default function MechanicWebEarningsScreen() {
   const { isDark } = useTheme();
+  const { width } = useResponsive();
   const earnings = useMechanicStore((state) => state.earnings);
   const completedJobs = useMechanicStore((state) => state.completedJobs);
 
@@ -68,7 +70,7 @@ export default function MechanicWebEarningsScreen() {
   return (
     <ScrollView
       style={[styles.scrollRoot, { backgroundColor: isDark ? '#101114' : '#F5F6F8' }]}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, width < 600 && { padding: 14 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Header Row: Title & Subtitle + Date Dropdown */}
@@ -158,6 +160,7 @@ export default function MechanicWebEarningsScreen() {
         <View
           style={[
             styles.metricCard,
+            width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -179,6 +182,7 @@ export default function MechanicWebEarningsScreen() {
         <View
           style={[
             styles.metricCard,
+            width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -200,6 +204,7 @@ export default function MechanicWebEarningsScreen() {
         <View
           style={[
             styles.metricCard,
+            width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -221,6 +226,7 @@ export default function MechanicWebEarningsScreen() {
         <View
           style={[
             styles.metricCard,
+            width < 500 && { minWidth: '46%', flexGrow: 1, padding: 12 },
             {
               backgroundColor: isDark ? '#16171B' : '#FFFFFF',
               borderColor: isDark ? '#23252B' : '#F1F2F4',
@@ -243,6 +249,7 @@ export default function MechanicWebEarningsScreen() {
       <View
         style={[
           styles.chartCard,
+          width < 600 && { padding: 14 },
           {
             backgroundColor: isDark ? '#16171B' : '#FFFFFF',
             borderColor: isDark ? '#23252B' : '#E5E7EB',
@@ -331,37 +338,69 @@ export default function MechanicWebEarningsScreen() {
               key={item.id}
               style={[
                 styles.recentItemCard,
+                width < 640 && { flexDirection: 'column', alignItems: 'stretch', gap: 10 },
                 {
                   backgroundColor: isDark ? '#16171B' : '#FFFFFF',
                   borderColor: isDark ? '#23252B' : '#E5E7EB',
                 },
               ]}
             >
-              <View style={styles.recentThumbBox}>
-                <Image source={item.thumb} style={styles.recentThumbImage} resizeMode="contain" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={styles.recentThumbBox}>
+                  <Image source={item.thumb} style={styles.recentThumbImage} resizeMode="contain" />
+                </View>
+
+                <View style={[styles.recentItemInfo, { flex: 1 }]}>
+                  <Text style={[styles.recentItemName, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                    {item.serviceName}
+                  </Text>
+                  <Text style={styles.recentItemId}>{item.jobId}</Text>
+                </View>
+
+                {width >= 640 && (
+                  <>
+                    <View style={styles.recentItemDateCol}>
+                      <Text style={styles.recentItemDate}>{item.date}</Text>
+                    </View>
+
+                    <View style={styles.recentItemAmountCol}>
+                      <Text style={[styles.recentItemAmount, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                        {item.amount}
+                      </Text>
+                    </View>
+
+                    <View style={styles.completedBadgePill}>
+                      <Ionicons name="checkmark" size={12} color="#15803D" style={{ marginRight: 4 }} />
+                      <Text style={styles.completedBadgeText}>Completed</Text>
+                    </View>
+                  </>
+                )}
               </View>
 
-              <View style={styles.recentItemInfo}>
-                <Text style={[styles.recentItemName, { color: isDark ? '#FFFFFF' : '#101114' }]}>
-                  {item.serviceName}
-                </Text>
-                <Text style={styles.recentItemId}>{item.jobId}</Text>
-              </View>
-
-              <View style={styles.recentItemDateCol}>
-                <Text style={styles.recentItemDate}>{item.date}</Text>
-              </View>
-
-              <View style={styles.recentItemAmountCol}>
-                <Text style={[styles.recentItemAmount, { color: isDark ? '#FFFFFF' : '#101114' }]}>
-                  {item.amount}
-                </Text>
-              </View>
-
-              <View style={styles.completedBadgePill}>
-                <Ionicons name="checkmark" size={12} color="#15803D" style={{ marginRight: 4 }} />
-                <Text style={styles.completedBadgeText}>Completed</Text>
-              </View>
+              {/* Mobile second row */}
+              {width < 640 && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: 8,
+                    borderTopWidth: 1,
+                    borderTopColor: isDark ? '#23252B' : '#F1F2F4',
+                  }}
+                >
+                  <Text style={styles.recentItemDate}>{item.date}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={[styles.recentItemAmount, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                      {item.amount}
+                    </Text>
+                    <View style={styles.completedBadgePill}>
+                      <Ionicons name="checkmark" size={12} color="#15803D" style={{ marginRight: 4 }} />
+                      <Text style={styles.completedBadgeText}>Completed</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           ))}
         </View>
