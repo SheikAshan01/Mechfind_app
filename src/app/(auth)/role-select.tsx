@@ -1,24 +1,38 @@
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BRAND_COLORS } from '../../theme/colors';
-import { RADIUS } from '../../theme/radius';
-import { SPACING } from '../../theme/spacing';
-import { TYPOGRAPHY } from '../../theme/typography';
-import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { useAuthStore } from '../../stores/authStore';
 import { useResponsive } from '../../hooks/useResponsive';
+import {
+  AuthCarHeader,
+  BottomLeftYellowGlow,
+} from '../../components/auth/AuthCarHeader';
 
 export default function RoleSelectScreen() {
-  const { theme, isDark } = useTheme();
-  const { isSmallDevice, isShortDevice, isTablet, isDesktop } = useResponsive();
+  const insets = useSafeAreaInsets();
+  const { width, isTablet, isDesktop } = useResponsive();
   const setRole = useAuthStore((state) => state.setRole);
+
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
   const handleSelectCustomer = () => {
     setRole('customer');
-    router.push('/(auth)/customer-login');
+    if (activeTab === 'signup') {
+      router.push('/(auth)/customer-signup');
+    } else {
+      router.push('/(auth)/customer-login');
+    }
   };
 
   const handleSelectMechanic = () => {
@@ -26,215 +40,291 @@ export default function RoleSelectScreen() {
     router.push('/(auth)/mechanic-login');
   };
 
-  const logoSize = isShortDevice || isSmallDevice ? 96 : 130;
-  const iconCircleSize = isSmallDevice ? 46 : 54;
-  const isCenteredScreen = isTablet || isDesktop;
+  const isWide = isTablet || isDesktop;
 
   return (
-    <ScreenContainer scrollable contentContainerStyle={styles.container}>
-      <View style={[styles.mainWrapper, isCenteredScreen && styles.centeredContainer]}>
-        <View style={styles.topSection}>
-          <Image
-            source={require('../../../assets/images/mechfind_logo.png')}
-            style={{ width: logoSize, height: logoSize }}
-            resizeMode="contain"
-            accessibilityLabel="MECHFIND Official Logo"
-          />
-          <Text style={[styles.heading, { color: theme.textPrimary }]}>
-            Welcome to MECHFIND
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Select how you want to continue today
-          </Text>
-        </View>
+    <View style={styles.screen}>
+      <StatusBar style="light" />
 
-        <View style={styles.cardsContainer}>
-          {/* Customer Card */}
-          <Pressable
-            onPress={handleSelectCustomer}
-            style={({ pressed }) => [
-              styles.roleCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.border,
-                opacity: pressed ? 0.92 : 1,
-                transform: [{ scale: pressed ? 0.985 : 1 }],
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Continue as Customer"
-          >
-            <View
-              style={[
-                styles.iconCircle,
-                {
-                  width: iconCircleSize,
-                  height: iconCircleSize,
-                  borderRadius: iconCircleSize / 2,
-                  backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
-                },
-              ]}
-            >
-              <Ionicons name="car-sport" size={isSmallDevice ? 24 : 28} color={BRAND_COLORS.primaryBlue} />
-            </View>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.roleTitle, { color: theme.textPrimary }]} numberOfLines={1}>
-                  I Am a Vehicle Owner
+      <ScrollView
+        bounces={false}
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Dark Hero with Sleek Sports Car & MECHFIND Emblem */}
+        <AuthCarHeader variant="welcome" showBack={false} />
+
+        {/* Bottom Curved White Sheet */}
+        <View
+          style={[
+            styles.bottomSheet,
+            isWide && styles.bottomSheetWide,
+            { paddingBottom: Math.max(insets.bottom, 24) + 16 },
+          ]}
+        >
+          {/* Subtle bottom-left corner accent */}
+          <BottomLeftYellowGlow />
+
+          <View style={styles.sheetContent}>
+            {/* Heading & Subtitle */}
+            <Text style={styles.heading}>Welcome to MechFind</Text>
+            <Text style={styles.subtitle}>
+              Book vehicle service, find trusted mechanics and get roadside support anytime.
+            </Text>
+
+            {/* Segmented Pill Switcher: Login vs Sign Up */}
+            <View style={styles.segmentedContainer}>
+              <Pressable
+                onPress={() => setActiveTab('login')}
+                style={[
+                  styles.segmentButton,
+                  activeTab === 'login' && styles.segmentButtonActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Login"
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    activeTab === 'login'
+                      ? styles.segmentTextActive
+                      : styles.segmentTextInactive,
+                  ]}
+                >
+                  Login
                 </Text>
-                <View style={[styles.popularBadge, { backgroundColor: 'rgba(23, 105, 245, 0.08)' }]}>
-                  <Text style={[styles.popularText, { color: BRAND_COLORS.primaryBlue }]}>Customer</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setActiveTab('signup');
+                  router.push('/(auth)/customer-signup');
+                }}
+                style={[
+                  styles.segmentButton,
+                  activeTab === 'signup' && styles.segmentButtonActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Sign Up"
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    activeTab === 'signup'
+                      ? styles.segmentTextActive
+                      : styles.segmentTextInactive,
+                  ]}
+                >
+                  Sign Up
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Role Cards List */}
+            <View style={styles.cardsList}>
+              {/* Card 1: I'm a Customer */}
+              <Pressable
+                onPress={handleSelectCustomer}
+                style={({ pressed }) => [
+                  styles.roleCard,
+                  styles.customerCard,
+                  {
+                    transform: [{ scale: pressed ? 0.985 : 1 }],
+                    opacity: pressed ? 0.94 : 1,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="I'm a Customer: Find and book mechanics near you"
+              >
+                <View style={styles.customerIconWrapper}>
+                  <Ionicons name="people" size={24} color="#111827" />
                 </View>
-              </View>
-              <Text style={[styles.roleDesc, { color: theme.textSecondary }]}>
-                Emergency breakdown assistance, puncture repair, towing, or find mechanics nearby.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.textTertiary} />
-          </Pressable>
 
-          {/* Mechanic Card */}
-          <Pressable
-            onPress={handleSelectMechanic}
-            style={({ pressed }) => [
-              styles.roleCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: BRAND_COLORS.primaryBlue,
-                borderWidth: 2,
-                opacity: pressed ? 0.92 : 1,
-                transform: [{ scale: pressed ? 0.985 : 1 }],
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Continue as Mechanic"
-          >
-            <View
-              style={[
-                styles.iconCircle,
-                {
-                  width: iconCircleSize,
-                  height: iconCircleSize,
-                  borderRadius: iconCircleSize / 2,
-                  backgroundColor: BRAND_COLORS.primaryBlue,
-                },
-              ]}
-            >
-              <Ionicons
-                name="construct"
-                size={isSmallDevice ? 24 : 28}
-                color="#FFFFFF"
-              />
-            </View>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.roleTitle, { color: theme.textPrimary }]} numberOfLines={1}>
-                  I Am a Mechanic / Garage
-                </Text>
-                <View style={[styles.popularBadge, { backgroundColor: BRAND_COLORS.primaryBlue }]}>
-                  <Text style={[styles.popularText, { color: '#FFFFFF' }]}>
-                    Partner
+                <View style={styles.cardInfo}>
+                  <Text style={styles.roleTitle}>I'm a Customer</Text>
+                  <Text style={styles.roleDesc}>
+                    Find and book mechanics near you
                   </Text>
                 </View>
-              </View>
-              <Text style={[styles.roleDesc, { color: theme.textSecondary }]}>
-                Receive breakdown jobs, navigate directly to stranded drivers, and grow your service revenue.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={BRAND_COLORS.primaryBlue} />
-          </Pressable>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.textTertiary }]}>
-            Protected by MECHFIND Multi-Role Security Architecture
-          </Text>
+                <Ionicons name="chevron-forward" size={20} color="#111827" />
+              </Pressable>
+
+              {/* Card 2: I'm a Mechanic */}
+              <Pressable
+                onPress={handleSelectMechanic}
+                style={({ pressed }) => [
+                  styles.roleCard,
+                  styles.mechanicCard,
+                  {
+                    transform: [{ scale: pressed ? 0.985 : 1 }],
+                    opacity: pressed ? 0.94 : 1,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="I'm a Mechanic: Receive service requests and grow your business"
+              >
+                <View style={styles.mechanicIconWrapper}>
+                  <Ionicons name="build" size={22} color="#111827" />
+                </View>
+
+                <View style={styles.cardInfo}>
+                  <Text style={styles.roleTitle}>I'm a Mechanic</Text>
+                  <Text style={styles.roleDesc}>
+                    Receive service requests and grow your business
+                  </Text>
+                </View>
+
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
-    </ScreenContainer>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.md,
-  },
-  mainWrapper: {
+  screen: {
     flex: 1,
-    justifyContent: 'space-between',
+    backgroundColor: '#101114',
   },
-  centeredContainer: {
-    maxWidth: 480,
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#101114',
+  },
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -24,
+    paddingTop: 28,
+    paddingHorizontal: 22,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  bottomSheetWide: {
+    maxWidth: 520,
     width: '100%',
     alignSelf: 'center',
+    borderRadius: 32,
+    marginTop: 12,
+    marginBottom: 40,
   },
-  topSection: {
-    alignItems: 'center',
-    marginVertical: SPACING.xs,
+  sheetContent: {
+    width: '100%',
+    zIndex: 2,
   },
   heading: {
-    ...TYPOGRAPHY.h2,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
     textAlign: 'center',
-    marginTop: SPACING.xs,
-    marginBottom: 2,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#4B5563',
     textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 22,
+    paddingHorizontal: 12,
   },
-  cardsContainer: {
-    gap: SPACING.md,
-    marginVertical: SPACING.md,
+  segmentedContainer: {
+    height: 48,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 24,
+    flexDirection: 'row',
+    padding: 4,
+    marginBottom: 20,
+  },
+  segmentButton: {
+    flex: 1,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#18181B',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  segmentTextActive: {
+    color: BRAND_COLORS.brandYellow,
+    fontWeight: '700',
+  },
+  segmentTextInactive: {
+    color: '#6B7280',
+  },
+  cardsList: {
+    gap: 14,
   },
   roleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: RADIUS.lg,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     borderWidth: 1.5,
   },
-  iconCircle: {
+  customerCard: {
+    backgroundColor: '#FFFDF5',
+    borderColor: '#FACC15',
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  mechanicCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  customerIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FEF08A',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.sm,
   },
-  cardContent: {
-    flex: 1,
-    marginRight: SPACING.xs,
-  },
-  cardHeader: {
-    flexDirection: 'row',
+  mechanicIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
-    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    marginLeft: 14,
+    marginRight: 8,
   },
   roleTitle: {
-    ...TYPOGRAPHY.h4,
-    fontSize: 15,
-  },
-  popularBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-  popularText: {
-    fontSize: 9,
+    fontSize: 16,
     fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.2,
   },
   roleDesc: {
-    ...TYPOGRAPHY.caption,
-    lineHeight: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  footerText: {
-    ...TYPOGRAPHY.caption,
-    textAlign: 'center',
-    fontSize: 10,
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
   },
 });

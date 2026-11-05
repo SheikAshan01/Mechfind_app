@@ -75,7 +75,7 @@ export default function CustomerOtpScreen() {
         ]}
       >
         <View style={styles.headerArea}>
-          <View style={[styles.iconCircle, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
+          <View style={[styles.iconCircle, { backgroundColor: isDark ? '#222328' : '#FFF3CC' }]}>
             <Ionicons name="shield-checkmark" size={32} color={BRAND_COLORS.primaryBlue} />
           </View>
           <Text style={[styles.title, { color: theme.textPrimary }]}>

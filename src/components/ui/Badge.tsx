@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
-import { BRAND_COLORS } from '../../theme/colors';
 import { RADIUS } from '../../theme/radius';
 import { SPACING } from '../../theme/spacing';
 import { TYPOGRAPHY } from '../../theme/typography';
@@ -41,9 +40,9 @@ export const Badge: React.FC<BadgeProps> = ({
       borderColor = isDark ? 'rgba(22, 163, 74, 0.4)' : 'rgba(22, 163, 74, 0.3)';
       break;
     case 'brand':
-      bgColor = isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(23, 105, 232, 0.10)';
-      textColor = isDark ? '#60A5FA' : '#1769E8';
-      borderColor = isDark ? 'rgba(96, 165, 250, 0.4)' : 'rgba(23, 105, 232, 0.25)';
+      bgColor = isDark ? 'rgba(255, 196, 0, 0.18)' : 'rgba(255, 196, 0, 0.24)';
+      textColor = isDark ? '#FFD54F' : '#17181C';
+      borderColor = isDark ? 'rgba(255, 196, 0, 0.42)' : 'rgba(229, 172, 0, 0.45)';
       break;
     case 'success':
       bgColor = theme.successBg;

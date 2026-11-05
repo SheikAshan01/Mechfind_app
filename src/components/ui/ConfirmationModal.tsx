@@ -71,7 +71,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     : '#FEE2E2'
                   : isDark
                   ? 'rgba(23, 105, 245, 0.2)'
-                  : '#EFF6FF',
+                  : '#FFF3CC',
               },
             ]}
           >
@@ -99,7 +99,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 styles.cancelButton,
                 {
                   borderColor: theme.border,
-                  backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+                  backgroundColor: isDark ? '#222328' : '#F1F2F4',
                 },
               ]}
               accessibilityRole="button"

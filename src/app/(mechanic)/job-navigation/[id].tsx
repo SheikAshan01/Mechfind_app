@@ -175,7 +175,7 @@ export default function MechanicJobNavigationScreen() {
         {/* Customer & Destination Card */}
         <Card>
           <View style={styles.customerRow}>
-            <View style={[styles.custAvatar, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
+            <View style={[styles.custAvatar, { backgroundColor: isDark ? '#222328' : '#FFF3CC' }]}>
               <Ionicons name="person" size={22} color={BRAND_COLORS.primaryBlue} />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>

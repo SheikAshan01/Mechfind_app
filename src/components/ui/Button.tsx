@@ -76,26 +76,26 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   // Variant base colors
-  let backgroundColor: string = BRAND_COLORS.primaryNavy;
-  let textColor: string = BRAND_COLORS.white;
+  let backgroundColor: string = theme.secondaryNavy;
+  let textColor: string = theme.primaryContrast;
   let borderColor: string = 'transparent';
   let borderWidth = 0;
 
   switch (variant) {
     case 'primary':
-      backgroundColor = isDark ? '#2563EB' : BRAND_COLORS.primaryBlue;
-      textColor = BRAND_COLORS.white;
+      backgroundColor = theme.accent;
+      textColor = theme.isDark ? '#101114' : '#17181C';
       break;
     case 'success':
       backgroundColor = BRAND_COLORS.successGreen;
       textColor = BRAND_COLORS.white;
       break;
     case 'secondary':
-      backgroundColor = isDark ? '#1E293B' : '#0F172A';
+      backgroundColor = theme.secondaryNavy;
       textColor = BRAND_COLORS.white;
       break;
     case 'outline':
-      backgroundColor = isDark ? 'transparent' : '#FFFFFF';
+      backgroundColor = isDark ? 'transparent' : theme.surface;
       textColor = theme.textPrimary;
       borderColor = isDark ? theme.border : BRAND_COLORS.border;
       borderWidth = 1.5;

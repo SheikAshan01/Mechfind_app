@@ -14,6 +14,9 @@ interface AuthState {
   setOnboardingCompleted: (val: boolean) => Promise<void>;
   loginCustomer: (phone: string, fullName?: string) => Promise<void>;
   loginMechanic: (phone: string, shopName?: string, status?: VerificationStatus) => Promise<void>;
+  updateCustomerProfile: (data: Partial<CustomerUser>) => Promise<void>;
+  updateCustomerPassword: (newPassword: string) => Promise<{ success: boolean; message: string }>;
+  updateMechanicProfile: (data: Partial<MechanicUser>) => Promise<void>;
   updateMechanicVerification: (status: VerificationStatus, reason?: string) => void;
   updateMechanicOnlineStatus: (isOnline: boolean) => void;
   logout: () => Promise<void>;
@@ -103,6 +106,88 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
+  updateCustomerProfile: async (data: Partial<CustomerUser>) => {
+    const current = get().user;
+    if (current && current.role === 'customer') {
+      const updated: CustomerUser = {
+        ...current,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
+      set({ user: updated });
+      await AsyncStorage.setItem('@mechfind_customer_profile', JSON.stringify(updated));
+
+      // Sync with Supabase if connected
+      try {
+        const { getSupabaseClient } = require('../services/api/supabaseClient');
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          await supabase.from('profiles').update({
+            full_name: updated.fullName,
+            email: updated.email,
+            phone_number: updated.phoneNumber,
+            avatar_url: updated.avatarUrl,
+            updated_at: updated.updatedAt,
+          }).eq('id', updated.id);
+        }
+      } catch {}
+    }
+  },
+
+  updateCustomerPassword: async (newPassword: string) => {
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+    await AsyncStorage.setItem('@mechfind_user_password_timestamp', new Date().toISOString());
+
+    // Sync with Supabase Auth if connected
+    try {
+      const { getSupabaseClient } = require('../services/api/supabaseClient');
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          return { success: false, message: error.message };
+        }
+      }
+    } catch {}
+
+    return { success: true, message: 'Password successfully updated.' };
+  },
+
+  updateMechanicProfile: async (data: Partial<MechanicUser>) => {
+    const current = get().user;
+    if (current && current.role === 'mechanic') {
+      const updated: MechanicUser = {
+        ...current,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
+      set({ user: updated });
+      await AsyncStorage.setItem('@mechfind_mechanic_profile', JSON.stringify(updated));
+
+      // Sync with Supabase if connected
+      try {
+        const { getSupabaseClient } = require('../services/api/supabaseClient');
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          await supabase.from('profiles').update({
+            full_name: updated.fullName,
+            phone_number: updated.phoneNumber,
+            avatar_url: updated.avatarUrl,
+            updated_at: updated.updatedAt,
+          }).eq('id', updated.id);
+
+          await supabase.from('mechanic_profiles').update({
+            shop_name: updated.shopName,
+            shop_address: updated.shopAddress,
+            service_radius_km: updated.serviceRadiusKm,
+          }).eq('user_id', updated.id);
+        }
+      } catch {}
+    }
+  },
+
   updateMechanicVerification: (status: VerificationStatus, reason?: string) => {
     const current = get().user;
     if (current && current.role === 'mechanic') {
@@ -150,7 +235,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       let user: AuthUser | null = null;
       if (isAuthenticated) {
-        user = role === 'mechanic' ? DEFAULT_MECHANIC : DEFAULT_CUSTOMER;
+        if (role === 'mechanic') {
+          const savedMech = await AsyncStorage.getItem('@mechfind_mechanic_profile');
+          user = savedMech ? { ...DEFAULT_MECHANIC, ...JSON.parse(savedMech) } : DEFAULT_MECHANIC;
+        } else {
+          const savedCust = await AsyncStorage.getItem('@mechfind_customer_profile');
+          user = savedCust ? { ...DEFAULT_CUSTOMER, ...JSON.parse(savedCust) } : DEFAULT_CUSTOMER;
+        }
       }
 
       set({

@@ -1,312 +1,172 @@
-import React from 'react';
-import {
-  Image,
-  Linking,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BRAND_COLORS } from '../../theme/colors';
-import { RADIUS } from '../../theme/radius';
-import { SPACING } from '../../theme/spacing';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export const WebFooter: React.FC = () => {
-  const { isDesktop, isTablet, horizontalPadding } = useResponsive();
+  const { width } = useResponsive();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 680 && width < 1024;
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-  const handleDialHelp = () => {
-    Linking.openURL('tel:18006324346').catch(() => {
-      // fallback
-    });
+  const handleSubscribe = () => {
+    if (email.trim() && email.includes('@')) {
+      setSubscribed(true);
+      setEmail('');
+    }
   };
 
-  const handleDownloadAndroid = () => {
-    Linking.openURL('https://github.com/mechfind/app/releases/latest/download/mechfind.apk').catch(() => {
-      window?.open?.('/downloads/mechfind.apk', '_blank');
-    });
-  };
-
-  const handleDownloadIOS = () => {
-    Linking.openURL('https://apps.apple.com/app/mechfind-roadside/id6400000000').catch(() => {
-      alert('MECHFIND iOS is currently in Apple TestFlight preview.');
-    });
+  const navTo = (route: string) => {
+    router.push(route as never);
   };
 
   return (
-    <View style={styles.footerContainer}>
-      {/* 1. Main Footer Grid Area */}
-      <View
-        style={[
-          styles.footerInner,
-          {
-            paddingHorizontal: horizontalPadding,
-            maxWidth: 1280,
-          },
-        ]}
-      >
-        {/* Top Helpline Ribbon */}
-        <View style={styles.helplineRibbon}>
-          <View style={styles.helplineTextCol}>
-            <View style={styles.emergencyTag}>
-              <Ionicons name="shield-checkmark" size={14} color="#16A34A" />
-              <Text style={styles.emergencyTagText}>24/7 ROADSIDE EMERGENCY ASSISTANCE</Text>
-            </View>
-            <Text style={styles.helplineTitle}>Stranded on the road? We are here to help.</Text>
-            <Text style={styles.helplineSub}>
-              Call our toll-free breakdown dispatch line anytime across India.
+    <View style={styles.footerWrapper}>
+      <View style={styles.footerContainer}>
+        {/* Top 5 Columns */}
+        <View style={[styles.columnsGrid, isDesktop ? styles.grid5Col : isTablet ? styles.grid2Col : styles.grid1Col]}>
+          {/* Col 1: Brand Info & Socials */}
+          <View style={styles.brandCol}>
+            <Image
+              source={require('../../../assets/images/mechfind-logo-dark.png')}
+              style={styles.footerLogo}
+              resizeMode="contain"
+              accessibilityLabel="MECHFIND"
+            />
+            <Text style={styles.brandTagline}>
+              On-demand vehicle service and roadside assistance, anytime, anywhere.
             </Text>
+            <View style={styles.socialIconsRow}>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={() => Linking.openURL('https://instagram.com')}
+                accessibilityLabel="Instagram"
+              >
+                <Ionicons name="logo-instagram" size={17} color="#C7C9CE" />
+              </Pressable>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={() => Linking.openURL('https://youtube.com')}
+                accessibilityLabel="YouTube"
+              >
+                <Ionicons name="logo-youtube" size={17} color="#C7C9CE" />
+              </Pressable>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={() => Linking.openURL('https://facebook.com')}
+                accessibilityLabel="Facebook"
+              >
+                <Ionicons name="logo-facebook" size={17} color="#C7C9CE" />
+              </Pressable>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={() => Linking.openURL('https://linkedin.com')}
+                accessibilityLabel="LinkedIn"
+              >
+                <Ionicons name="logo-linkedin" size={17} color="#C7C9CE" />
+              </Pressable>
+            </View>
           </View>
 
-          <Pressable
-            onPress={handleDialHelp}
-            style={({ pressed }) => [
-              styles.helplineButton,
-              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Call 1800-MECH-FIND Helpline"
-          >
-            <Ionicons name="call" size={18} color="#FFFFFF" />
-            <Text style={styles.helplineButtonText}>1800-MECH-FIND (Toll-Free)</Text>
-          </Pressable>
-        </View>
+          {/* Col 2: Quick Links */}
+          <View style={styles.linksCol}>
+            <Text style={styles.colHeader}>Quick Links</Text>
+            <Pressable onPress={() => navTo('/(customer)/(tabs)')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Home</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/services-pricing')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Services</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/nearby-mechanics')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Find a Mechanic</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/(tabs)/requests')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Bookings</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/(tabs)/vehicles')} style={styles.linkItem}>
+              <Text style={styles.linkText}>My Vehicles</Text>
+            </Pressable>
+          </View>
 
-        <View style={styles.divider} />
+          {/* Col 3: For Mechanics */}
+          <View style={styles.linksCol}>
+            <Text style={styles.colHeader}>For Mechanics</Text>
+            <Pressable onPress={() => navTo('/(customer)/become-mechanic')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Become a Mechanic</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(auth)/mechanic-login')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Mechanic Login</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/become-mechanic')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Partner Benefits</Text>
+            </Pressable>
+          </View>
 
-        {/* 4-Column Navigation Layout */}
-        <View style={[styles.columnsRow, !isDesktop && styles.columnsRowWrap]}>
-          {/* Col 1: Brand & About */}
-          <View style={[styles.column, isDesktop ? styles.colBrand : styles.colMobile]}>
-            <View style={styles.brandRow}>
-              <Image
-                source={require('../../../assets/images/mechfind_logo.png')}
-                style={styles.brandLogo}
-                resizeMode="contain"
-                accessibilityLabel="MECHFIND Emblem"
-              />
-              <View>
-                <Text style={styles.brandTitle}>MECHFIND</Text>
-                <Text style={styles.brandSubtitle}>Roadside Assistance Network</Text>
+          {/* Col 4: Company */}
+          <View style={styles.linksCol}>
+            <Text style={styles.colHeader}>Company</Text>
+            <Pressable onPress={() => navTo('/(customer)/about')} style={styles.linkItem}>
+              <Text style={styles.linkText}>About Us</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/contact')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Contact Us</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/about')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Privacy Policy</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/about')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Terms & Conditions</Text>
+            </Pressable>
+            <Pressable onPress={() => navTo('/(customer)/contact')} style={styles.linkItem}>
+              <Text style={styles.linkText}>Support</Text>
+            </Pressable>
+          </View>
+
+          {/* Col 5: Stay Updated Newsletter */}
+          <View style={styles.newsletterCol}>
+            <Text style={styles.colHeader}>Stay Updated</Text>
+            <Text style={styles.newsletterDesc}>
+              Get service updates, offers and more from MECHFIND.
+            </Text>
+
+            {subscribed ? (
+              <View style={styles.subscribedMsg}>
+                <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
+                <Text style={styles.subscribedText}>Thank you for subscribing!</Text>
               </View>
-            </View>
-
-            <Text style={styles.brandDesc}>
-              India's fastest growing on-demand roadside assistance platform. Connecting stranded motorists with verified local mechanics in 15–25 minutes with upfront launch pricing.
-            </Text>
-
-            {/* App Badges */}
-            <View style={styles.appsRow}>
-              <Pressable
-                onPress={handleDownloadAndroid}
-                style={({ pressed }) => [
-                  styles.appBadge,
-                  { backgroundColor: '#16A34A', opacity: pressed ? 0.85 : 1 },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Download Android APK"
-              >
-                <Ionicons name="logo-android" size={16} color="#FFFFFF" />
-                <View>
-                  <Text style={styles.appBadgeSmall}>DIRECT DOWNLOAD</Text>
-                  <Text style={styles.appBadgeBold}>Android APK</Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={handleDownloadIOS}
-                style={({ pressed }) => [
-                  styles.appBadge,
-                  { backgroundColor: '#1E293B', opacity: pressed ? 0.85 : 1 },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Download iOS App"
-              >
-                <Ionicons name="logo-apple" size={16} color="#FFFFFF" />
-                <View>
-                  <Text style={styles.appBadgeSmall}>AVAILABLE ON</Text>
-                  <Text style={styles.appBadgeBold}>App Store</Text>
-                </View>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Col 2: Services */}
-          <View style={[styles.column, isDesktop ? styles.colNav : styles.colHalf]}>
-            <Text style={styles.columnTitle}>ROADSIDE SERVICES</Text>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>2-Wheeler Breakdown (₹199)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>4-Wheeler Assistance (₹299)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Battery Jumpstart (₹299)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Flat Tyre & Puncture (₹199)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Emergency Towing (₹1,200)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/services-pricing')}
-              style={styles.footerLink}
-            >
-              <Text style={[styles.footerLinkText, { color: BRAND_COLORS.primaryBlue }]}>
-                View Full Launch Pricing →
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Col 3: Customer & Partner */}
-          <View style={[styles.column, isDesktop ? styles.colNav : styles.colHalf]}>
-            <Text style={styles.columnTitle}>QUICK ACCESS</Text>
-            <Pressable
-              onPress={() => router.push('/(customer)/breakdown-request')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Book Breakdown Request</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/nearby-mechanics')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Find Nearby Garages</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(customer)/(tabs)/requests')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Track Active Job</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(auth)/mechanic-login')}
-              style={styles.footerLink}
-            >
-              <Text style={styles.footerLinkText}>Partner Workshop Login</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/(auth)/mechanic-register')}
-              style={styles.footerLink}
-            >
-              <Text style={[styles.footerLinkText, { color: BRAND_COLORS.accentTeal }]}>
-                Join as Mechanic Partner
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Col 4: Coverage & Trust */}
-          <View style={[styles.column, isDesktop ? styles.colNav : styles.colMobile]}>
-            <Text style={styles.columnTitle}>COVERAGE & PROMISE</Text>
-            <View style={styles.promiseItem}>
-              <Ionicons name="time" size={16} color="#16A34A" />
-              <Text style={styles.promiseText}>15–25 Mins Average Dispatch ETA</Text>
-            </View>
-            <View style={styles.promiseItem}>
-              <Ionicons name="cash" size={16} color="#16A34A" />
-              <Text style={styles.promiseText}>Fixed Launch Pricing • 0 Surge</Text>
-            </View>
-            <View style={styles.promiseItem}>
-              <Ionicons name="checkmark-done-circle" size={16} color="#16A34A" />
-              <Text style={styles.promiseText}>100% Background Verified Mechanics</Text>
-            </View>
-            <View style={styles.coverageBox}>
-              <Text style={styles.coverageTitle}>OPERATING CORRIDORS</Text>
-              <Text style={styles.coverageText}>
-                Chennai, Coimbatore, Madurai, Dindigul, Trichy, Salem, National & State Highway Corridors.
-              </Text>
-            </View>
+            ) : (
+              <View style={styles.newsletterInputRow}>
+                <TextInput
+                  style={styles.newsletterInput}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#747B87"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                <Pressable
+                  onPress={handleSubscribe}
+                  style={styles.newsletterSubmitBtn}
+                  accessibilityLabel="Subscribe"
+                >
+                  <Ionicons name="arrow-forward" size={17} color="#101114" />
+                </Pressable>
+              </View>
+            )}
           </View>
         </View>
 
-        <View style={styles.divider} />
-
-        {/* 2. Bottom Copyright & Legal Links */}
-        <View style={[styles.bottomBar, !isDesktop && styles.bottomBarWrap]}>
+        {/* Bottom Copyright & Love */}
+        <View style={styles.footerBottomRow}>
           <Text style={styles.copyrightText}>
-            © {new Date().getFullYear()} MECHFIND Technologies Private Limited. All rights reserved.
+            © {new Date().getFullYear()} MECHFIND. All rights reserved.
           </Text>
-
-          <View style={styles.legalLinksRow}>
-            <Pressable
-              onPress={() => router.push('/(customer)/services-pricing')}
-              style={styles.legalLink}
-            >
-              <Text style={styles.legalLinkText}>Pricing Policy</Text>
-            </Pressable>
-            <Text style={styles.dotSeparator}>•</Text>
-            <Pressable
-              onPress={() => alert('MECHFIND Terms of Service: Fair service guarantee, zero surge, verified mechanic dispatch.')}
-              style={styles.legalLink}
-            >
-              <Text style={styles.legalLinkText}>Terms of Service</Text>
-            </Pressable>
-            <Text style={styles.dotSeparator}>•</Text>
-            <Pressable
-              onPress={() => alert('MECHFIND Privacy Policy: Your GPS location is solely used for roadside assistance dispatch.')}
-              style={styles.legalLink}
-            >
-              <Text style={styles.legalLinkText}>Privacy</Text>
-            </Pressable>
-            <Text style={styles.dotSeparator}>•</Text>
-            <Pressable
-              onPress={() => alert('MECHFIND Safety: Dedicated 24/7 SOS helpline and verified identity for every technician.')}
-              style={styles.legalLink}
-            >
-              <Text style={styles.legalLinkText}>Safety</Text>
-            </Pressable>
-          </View>
-
-          {/* Social Links */}
-          <View style={styles.socialRow}>
-            <Pressable
-              onPress={() => Linking.openURL('https://wa.me/9118006324346')}
-              style={styles.socialIcon}
-              accessibilityLabel="MECHFIND WhatsApp"
-            >
-              <Ionicons name="logo-whatsapp" size={17} color="#94A3B8" />
-            </Pressable>
-            <Pressable
-              onPress={() => Linking.openURL('https://twitter.com')}
-              style={styles.socialIcon}
-              accessibilityLabel="MECHFIND Twitter"
-            >
-              <Ionicons name="logo-twitter" size={17} color="#94A3B8" />
-            </Pressable>
-            <Pressable
-              onPress={() => Linking.openURL('https://instagram.com')}
-              style={styles.socialIcon}
-              accessibilityLabel="MECHFIND Instagram"
-            >
-              <Ionicons name="logo-instagram" size={17} color="#94A3B8" />
-            </Pressable>
-            <Pressable
-              onPress={() => Linking.openURL('https://linkedin.com')}
-              style={styles.socialIcon}
-              accessibilityLabel="MECHFIND LinkedIn"
-            >
-              <Ionicons name="logo-linkedin" size={17} color="#94A3B8" />
-            </Pressable>
-          </View>
+          <Text style={styles.madeWithText}>
+            Made with <Text style={{ color: '#EF4444' }}>❤️</Text> for car owners
+          </Text>
         </View>
       </View>
     </View>
@@ -314,242 +174,145 @@ export const WebFooter: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  footerContainer: {
+  footerWrapper: {
     width: '100%',
-    backgroundColor: '#0B132B',
+    backgroundColor: '#101114',
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
-    paddingTop: 40,
-    paddingBottom: 32,
-    marginTop: 48,
+    borderTopColor: '#1F2024',
+    paddingTop: 54,
+    paddingBottom: 28,
   },
-  footerInner: {
+  footerContainer: {
+    maxWidth: 1320,
     width: '100%',
     alignSelf: 'center',
+    paddingHorizontal: 24,
   },
-  helplineRibbon: {
+  columnsGrid: {
+    gap: 36,
+    paddingBottom: 44,
+  },
+  grid5Col: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  grid2Col: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  grid1Col: {
+    flexDirection: 'column',
+    gap: 28,
+  },
+  brandCol: {
+    maxWidth: 290,
+  },
+  footerLogo: {
+    width: 140,
+    height: 38,
+    marginBottom: 14,
+  },
+  brandTagline: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#9CA3AF',
+    marginBottom: 18,
+  },
+  socialIconsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  socialBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#1A1B1F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2D3139',
+  },
+  linksCol: {
+    minWidth: 130,
+  },
+  colHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  linkItem: {
+    paddingVertical: 6,
+  },
+  linkText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  newsletterCol: {
+    maxWidth: 280,
+    width: '100%',
+  },
+  newsletterDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#9CA3AF',
+    marginBottom: 14,
+  },
+  newsletterInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(23, 105, 245, 0.08)',
-    borderColor: 'rgba(23, 105, 245, 0.25)',
+    backgroundColor: '#1A1B1F',
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: RADIUS.lg,
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-    flexWrap: 'wrap',
-    gap: 16,
+    borderColor: '#2D3139',
+    overflow: 'hidden',
+    height: 44,
   },
-  helplineTextCol: {
+  newsletterInput: {
     flex: 1,
-    minWidth: 260,
+    paddingHorizontal: 14,
+    fontSize: 13,
+    color: '#FFFFFF',
+    height: '100%',
   },
-  emergencyTag: {
+  newsletterSubmitBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#FFC400',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subscribedMsg: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
-  },
-  emergencyTagText: {
-    color: '#16A34A',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  helplineTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  helplineSub: {
-    color: '#94A3B8',
-    fontSize: 13,
-  },
-  helplineButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: RADIUS.md,
-  },
-  helplineButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#1E293B',
-    marginVertical: 32,
-  },
-  columnsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 28,
-  },
-  columnsRowWrap: {
-    flexWrap: 'wrap',
-  },
-  column: {
-    gap: 12,
-  },
-  colBrand: {
-    flex: 1.4,
-    minWidth: 280,
-  },
-  colNav: {
-    flex: 1,
-    minWidth: 180,
-  },
-  colMobile: {
-    width: '100%',
-  },
-  colHalf: {
-    width: '46%',
-    minWidth: 160,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  brandLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-  },
-  brandTitle: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  brandSubtitle: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  brandDesc: {
-    color: '#94A3B8',
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  appsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-    flexWrap: 'wrap',
-  },
-  appBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  appBadgeSmall: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  appBadgeBold: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  columnTitle: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  footerLink: {
-    paddingVertical: 4,
-  },
-  footerLinkText: {
-    color: '#94A3B8',
+  subscribedText: {
+    color: '#16A34A',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  promiseItem: {
+  footerBottomRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#1F2024',
+    paddingTop: 22,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  promiseText: {
-    color: '#CBD5E1',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  coverageBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: RADIUS.sm,
-    padding: 10,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  coverageTitle: {
-    color: '#64748B',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  coverageText: {
-    color: '#94A3B8',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  bottomBar: {
-    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 16,
-  },
-  bottomBarWrap: {
-    flexWrap: 'wrap',
+    gap: 12,
   },
   copyrightText: {
-    color: '#64748B',
-    fontSize: 12,
+    fontSize: 12.5,
+    color: '#747B87',
   },
-  legalLinksRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  legalLink: {
-    paddingVertical: 2,
-  },
-  legalLinkText: {
-    color: '#94A3B8',
-    fontSize: 12,
-  },
-  dotSeparator: {
-    color: '#475569',
-    fontSize: 12,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  socialIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1E293B',
-    alignItems: 'center',
-    justifyContent: 'center',
+  madeWithText: {
+    fontSize: 12.5,
+    color: '#747B87',
   },
 });

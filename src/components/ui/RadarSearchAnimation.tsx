@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BRAND_COLORS } from '../../theme/colors';
@@ -27,15 +27,17 @@ export const RadarSearchAnimation: React.FC<RadarSearchAnimationProps> = ({
   const [messageIndex, setMessageIndex] = useState(0);
 
   // Animated values for 3 concentric radar ripple rings
-  const ring1 = useRef(new Animated.Value(0)).current;
-  const ring2 = useRef(new Animated.Value(0)).current;
-  const ring3 = useRef(new Animated.Value(0)).current;
+  const [animationValues] = useState(() => ({
+    ring1: new Animated.Value(0),
+    ring2: new Animated.Value(0),
+    ring3: new Animated.Value(0),
+    centerPulse: new Animated.Value(1),
+    sweepRotate: new Animated.Value(0),
+  }));
+  const { ring1, ring2, ring3, centerPulse, sweepRotate } = animationValues;
 
   // Pulse value for center pin
-  const centerPulse = useRef(new Animated.Value(1)).current;
-
   // Rotation for radar sweep beam
-  const sweepRotate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Message rotation progressing through the 5 specified search states
@@ -111,7 +113,7 @@ export const RadarSearchAnimation: React.FC<RadarSearchAnimationProps> = ({
       pulseAnim.stop();
       sweepAnim.stop();
     };
-  }, []);
+  }, [centerPulse, ring1, ring2, ring3, sweepRotate]);
 
   const sweepInterpolation = sweepRotate.interpolate({
     inputRange: [0, 1],
@@ -140,7 +142,7 @@ export const RadarSearchAnimation: React.FC<RadarSearchAnimationProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? '#131D2E' : '#FFFFFF',
+          backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
           borderColor: theme.border,
         },
       ]}
@@ -223,7 +225,7 @@ export const RadarSearchAnimation: React.FC<RadarSearchAnimationProps> = ({
             styles.cancelBtn,
             {
               borderColor: theme.border,
-              backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+              backgroundColor: isDark ? '#222328' : '#F1F2F4',
             },
           ]}
           hitSlop={6}

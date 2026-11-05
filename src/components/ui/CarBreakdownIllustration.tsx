@@ -39,41 +39,41 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
         <Defs>
           {/* Subtle ambient road gradient */}
           <LinearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={isDark ? '#1E293B' : '#E2E8F0'} stopOpacity="0.8" />
-            <Stop offset="1" stopColor={isDark ? '#0B111E' : '#F8FAFC'} stopOpacity="0" />
+            <Stop offset="0" stopColor={isDark ? '#222328' : '#E5E6E9'} stopOpacity="0.8" />
+            <Stop offset="1" stopColor={isDark ? '#101114' : '#F1F2F4'} stopOpacity="0" />
           </LinearGradient>
 
           {/* Car Body Metallic Gradient */}
           <LinearGradient id="carBodyGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={isDark ? '#E2E8F0' : '#FFFFFF'} />
-            <Stop offset="0.6" stopColor={isDark ? '#CBD5E1' : '#F1F5F9'} />
-            <Stop offset="1" stopColor={isDark ? '#94A3B8' : '#E2E8F0'} />
+            <Stop offset="0" stopColor={isDark ? '#E5E6E9' : '#FFFFFF'} />
+            <Stop offset="0.6" stopColor={isDark ? '#CBD5E1' : '#F1F2F4'} />
+            <Stop offset="1" stopColor={isDark ? '#92959C' : '#E5E6E9'} />
           </LinearGradient>
 
           {/* Roof & Pillars */}
           <LinearGradient id="roofGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={isDark ? '#1E293B' : '#334155'} />
-            <Stop offset="1" stopColor={isDark ? '#0F172A' : '#1E293B'} />
+            <Stop offset="0" stopColor={isDark ? '#222328' : '#334155'} />
+            <Stop offset="1" stopColor={isDark ? '#101114' : '#222328'} />
           </LinearGradient>
 
           {/* Window Glass Gradient */}
           <LinearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#38BDF8" stopOpacity="0.75" />
-            <Stop offset="0.4" stopColor="#0284C7" stopOpacity="0.85" />
-            <Stop offset="1" stopColor="#0F172A" stopOpacity="0.95" />
+            <Stop offset="0" stopColor="#C7C9CE" stopOpacity="0.75" />
+            <Stop offset="0.4" stopColor="#70737B" stopOpacity="0.85" />
+            <Stop offset="1" stopColor="#101114" stopOpacity="0.95" />
           </LinearGradient>
 
           {/* Wheel Tyre Gradient */}
           <LinearGradient id="tyreGrad" x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor="#334155" />
-            <Stop offset="1" stopColor="#0F172A" />
+            <Stop offset="1" stopColor="#101114" />
           </LinearGradient>
 
           {/* Alloy Rim Gradient */}
           <LinearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#F8FAFC" />
+            <Stop offset="0" stopColor="#F1F2F4" />
             <Stop offset="0.5" stopColor="#CBD5E1" />
-            <Stop offset="1" stopColor="#64748B" />
+            <Stop offset="1" stopColor="#70737B" />
           </LinearGradient>
 
           {/* Emergency Cone Gradient */}
@@ -107,7 +107,7 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           {/* Wheel Arches & Underbody */}
           <Path
             d="M 90 128 L 115 128 C 115 116 126 106 138 106 C 150 106 161 116 161 128 L 225 128 C 225 116 236 106 248 106 C 260 106 271 116 271 128 L 295 128 C 298 128 300 125 300 122 L 300 114 C 300 108 296 103 290 101 L 275 97 L 245 80 C 238 76 230 74 220 74 L 165 74 C 155 74 146 78 140 85 L 118 97 L 98 100 C 93 101 90 105 90 110 Z"
-            fill={isDark ? '#0F172A' : '#1E293B'}
+            fill={isDark ? '#101114' : '#222328'}
             opacity="0.15"
           />
 
@@ -122,7 +122,7 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           {/* Subtle Side Character Crease Line */}
           <Path
             d="M 100 104 Q 190 98 294 104"
-            stroke={isDark ? '#64748B' : '#94A3B8'}
+            stroke={isDark ? '#70737B' : '#92959C'}
             strokeWidth="1"
             fill="none"
             opacity="0.7"
@@ -131,22 +131,22 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           {/* Roof Rails */}
           <Path
             d="M 168 67 L 234 67 C 236 67 238 68 238 70 L 164 70 C 164 68 166 67 168 67 Z"
-            fill={isDark ? '#64748B' : '#94A3B8'}
+            fill={isDark ? '#70737B' : '#92959C'}
           />
 
           {/* Window Frame & Glass Area */}
           <Path
             d="M 148 78 L 172 73 L 224 73 C 231 73 238 75 243 80 L 263 95 L 132 95 Z"
             fill="url(#glassGrad)"
-            stroke={isDark ? '#1E293B' : '#475569'}
+            stroke={isDark ? '#222328' : '#475569'}
             strokeWidth="0.8"
           />
 
           {/* Center B-Pillar */}
-          <Rect x="195" y="73" width="6" height="22" fill={isDark ? '#0F172A' : '#1E293B'} />
+          <Rect x="195" y="73" width="6" height="22" fill={isDark ? '#101114' : '#222328'} />
 
           {/* Front Quarter Glass Pillar */}
-          <Path d="M 233 73 L 235 73 L 239 95 L 237 95 Z" fill={isDark ? '#0F172A' : '#1E293B'} />
+          <Path d="M 233 73 L 235 73 L 239 95 L 237 95 Z" fill={isDark ? '#101114' : '#222328'} />
 
           {/* Window Interior Glare / Reflection */}
           <Path
@@ -164,7 +164,7 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           <Path
             d="M 238 91 C 242 89 248 89 250 93 C 251 95 249 97 246 97 L 238 96 Z"
             fill="url(#carBodyGrad)"
-            stroke={isDark ? '#475569' : '#94A3B8'}
+            stroke={isDark ? '#475569' : '#92959C'}
             strokeWidth="0.8"
           />
           {/* Amber Indicator on Mirror */}
@@ -173,7 +173,7 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           {/* Front LED Projector Headlamp */}
           <Path
             d="M 288 103 L 298 104 C 299 105 300 107 298 109 L 286 109 Z"
-            fill="#38BDF8"
+            fill="#FFC400"
             opacity="0.9"
           />
           <Circle cx="294" cy="106" r="1.8" fill="#FFFFFF" />
@@ -188,26 +188,26 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
           <G id="rearWheel">
             <Circle cx="138" cy="125" r="15" fill="url(#tyreGrad)" />
             <Circle cx="138" cy="125" r="10" fill="url(#rimGrad)" />
-            <Circle cx="138" cy="125" r="5" fill={isDark ? '#1E293B' : '#475569'} />
+            <Circle cx="138" cy="125" r="5" fill={isDark ? '#222328' : '#475569'} />
             {/* 5-Spoke Modern Rim Design */}
-            <Rect x="136.5" y="116" width="3" height="18" rx="1.5" fill="#F8FAFC" />
-            <Rect x="129" y="123.5" width="18" height="3" rx="1.5" fill="#F8FAFC" />
-            <Circle cx="138" cy="125" r="2.2" fill="#0F172A" />
+            <Rect x="136.5" y="116" width="3" height="18" rx="1.5" fill="#F1F2F4" />
+            <Rect x="129" y="123.5" width="18" height="3" rx="1.5" fill="#F1F2F4" />
+            <Circle cx="138" cy="125" r="2.2" fill="#101114" />
           </G>
 
           {/* Front Wheel (Right) */}
           <G id="frontWheel">
             <Circle cx="249" cy="125" r="15" fill="url(#tyreGrad)" />
             <Circle cx="249" cy="125" r="10" fill="url(#rimGrad)" />
-            <Circle cx="249" cy="125" r="5" fill={isDark ? '#1E293B' : '#475569'} />
+            <Circle cx="249" cy="125" r="5" fill={isDark ? '#222328' : '#475569'} />
             {/* 5-Spoke Modern Rim Design */}
-            <Rect x="247.5" y="116" width="3" height="18" rx="1.5" fill="#F8FAFC" />
-            <Rect x="240" y="123.5" width="18" height="3" rx="1.5" fill="#F8FAFC" />
-            <Circle cx="249" cy="125" r="2.2" fill="#0F172A" />
+            <Rect x="247.5" y="116" width="3" height="18" rx="1.5" fill="#F1F2F4" />
+            <Rect x="240" y="123.5" width="18" height="3" rx="1.5" fill="#F1F2F4" />
+            <Circle cx="249" cy="125" r="2.2" fill="#101114" />
           </G>
 
           {/* Subtle MECHFIND Brand Badge on Door */}
-          <Circle cx="180" cy="108" r="3.5" fill="#1769E8" opacity="0.85" />
+          <Circle cx="180" cy="108" r="3.5" fill="#101114" opacity="0.85" />
           <Path d="M 178.5 108 L 181.5 108" stroke="#FFFFFF" strokeWidth="0.8" />
         </G>
 
@@ -246,7 +246,7 @@ export const CarBreakdownIllustration: React.FC<Props> = ({
 
         {/* 4. Service Assistance Indicator (Subtle Wrench / Shield) */}
         <G id="serviceIndicator" transform="translate(62, 70)">
-          <Circle cx="12" cy="12" r="14" fill={isDark ? '#1E293B' : '#EFF6FF'} stroke="#1769E8" strokeWidth="1.5" />
+          <Circle cx="12" cy="12" r="14" fill={isDark ? '#222328' : '#FFF3CC'} stroke="#101114" strokeWidth="1.5" />
           {/* Mini verified check */}
           <Path
             d="M 7 12 L 10.5 15.5 L 17 9"

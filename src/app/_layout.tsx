@@ -4,7 +4,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '../theme/ThemeContext';
 import { useAuthStore } from '../stores/authStore';
-import { AppDownloadBanner } from '../components/ui/AppDownloadBanner';
 
 export default function RootLayout() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
@@ -17,7 +16,6 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AppDownloadBanner />
           <Stack
             screenOptions={{
               headerShown: false,

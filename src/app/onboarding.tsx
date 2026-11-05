@@ -29,26 +29,26 @@ const SLIDES: OnboardingSlide[] = [
   {
     id: 'slide_1',
     icon: 'location-outline',
-    badge: 'INSTANT DISCOVERY',
+    badge: 'LOCATION BASED',
     title: 'Find Nearby Mechanics',
     description:
-      'Locate verified automotive mechanics and 24/7 breakdown garages within minutes from your exact breakdown spot.',
+      'Share your breakdown location to browse mechanics available in the current service listings.',
   },
   {
     id: 'slide_2',
     icon: 'construct-outline',
-    badge: 'RAPID DISPATCH',
+    badge: 'SERVICE REQUEST',
     title: 'Request Breakdown Help',
     description:
-      'Puncture, dead battery, engine overheating or towing — select your issue and dispatch immediate professional roadside help.',
+      'Choose a service, add vehicle and issue details, then submit a roadside assistance request.',
   },
   {
     id: 'slide_3',
     icon: 'navigate-outline',
-    badge: 'LIVE GPS TRACKING',
+    badge: 'REQUEST STATUS',
     title: 'Track in Real Time',
     description:
-      'Watch your assigned mechanic travel to your location on the map with accurate live ETA, route updates, and direct call support.',
+      'Review request status in the app. Route and contact options appear when available for the selected request.',
   },
 ];
 
@@ -103,7 +103,7 @@ export default function OnboardingScreen() {
         <View style={styles.topBar}>
           <View style={styles.brandGroup}>
             <Image
-              source={require('../../assets/images/mechfind_logo.png')}
+              source={require('../../assets/images/app-emblem.png')}
               style={styles.headerLogo}
               resizeMode="contain"
               accessibilityLabel="MECHFIND"
@@ -138,7 +138,7 @@ export default function OnboardingScreen() {
                 height: iconContainerSize,
                 borderRadius: iconContainerSize / 2,
                 marginBottom: isShortDevice ? SPACING.md : SPACING.lg,
-                backgroundColor: isDark ? '#1E293B' : 'rgba(23, 105, 245, 0.08)',
+                backgroundColor: isDark ? '#222328' : 'rgba(23, 105, 245, 0.08)',
                 borderColor: BRAND_COLORS.primaryBlue,
               },
             ]}
@@ -189,7 +189,7 @@ export default function OnboardingScreen() {
                           ? BRAND_COLORS.primaryBlue
                           : isDark
                           ? '#1E2D42'
-                          : '#E2E8F0',
+                          : '#E5E6E9',
                       width: idx === currentIndex ? 24 : 8,
                     },
                   ]}

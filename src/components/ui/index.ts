@@ -12,4 +12,3 @@ export * from './StatusStepper';
 export * from './CarBreakdownIllustration';
 export * from './RadarSearchAnimation';
 export * from './ConfirmationModal';
-export * from './AppDownloadBanner';

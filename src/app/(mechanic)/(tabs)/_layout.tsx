@@ -4,38 +4,36 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../../theme/ThemeContext';
-import { BRAND_COLORS } from '../../../theme/colors';
-import { useResponsive } from '../../../hooks/useResponsive';
 import { ResponsiveNav } from '../../../components/navigation/ResponsiveNav';
 
 export default function MechanicTabsLayout() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { width, isMobile } = useResponsive();
-
-  const isWebDesktop = !isMobile || (Platform.OS === 'web' && width >= 768);
+  const isWeb = Platform.OS === 'web';
   const bottomPadding = Math.max(insets.bottom, 6);
   const barHeight = 56 + bottomPadding;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {isWebDesktop && <ResponsiveNav mode="mechanic" />}
+    <View style={{ flex: 1, backgroundColor: isDark ? '#101114' : '#F1F2F4' }}>
+      {isWeb && <ResponsiveNav mode="mechanic" />}
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            display: isWebDesktop ? 'none' : 'flex',
-            backgroundColor: theme.tabBar,
-            borderTopColor: theme.divider,
+            display: isWeb ? 'none' : 'flex',
+            backgroundColor: isDark ? '#101114' : '#FFFFFF',
+            borderTopColor: isDark ? '#1F2024' : '#E5E7EB',
             borderTopWidth: 1,
             height: barHeight,
             paddingBottom: bottomPadding,
             paddingTop: 6,
-            elevation: 0,
-            shadowOpacity: 0,
+            elevation: 8,
+            shadowColor: '#000000',
+            shadowOpacity: isDark ? 0.25 : 0.08,
+            shadowRadius: 10,
           },
-          tabBarActiveTintColor: BRAND_COLORS.primaryBlue,
-          tabBarInactiveTintColor: theme.tabBarInactive,
+          tabBarActiveTintColor: '#FFC400',
+          tabBarInactiveTintColor: isDark ? '#9CA3AF' : '#70737B',
           tabBarLabelStyle: {
             fontSize: 11,
             fontWeight: '600',

@@ -102,7 +102,7 @@ export const MapFallback: React.FC<MapFallbackProps> = ({
         styles.container,
         {
           height,
-          backgroundColor: isDark ? '#0B111E' : '#F1F5F9',
+          backgroundColor: isDark ? '#101114' : '#F1F2F4',
           borderColor: theme.border,
         },
       ]}
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#16A36A',
   },
   liveGpsText: {
     color: '#FFFFFF',
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   mechanicMarkerLabel: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#222328',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

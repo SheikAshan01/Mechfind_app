@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +19,7 @@ import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { WebFooter } from '../../components/navigation/WebFooter';
+import { ResponsiveNav } from '../../components/navigation/ResponsiveNav';
 import { pricingService, ServicePricingItem } from '../../services/pricing/pricingService';
 import { useResponsive } from '../../hooks/useResponsive';
 
@@ -62,7 +64,7 @@ export default function CustomerServicesPricingScreen() {
 
   return (
     <ScreenContainer scrollable withPadding={false} edges={['top', 'left', 'right']}>
-      <Header title="Official Launch Pricing" showBack showThemeToggle />
+      {Platform.OS === 'web' ? <ResponsiveNav /> : <Header title="Service base prices" showBack showThemeToggle />}
 
       <View
         style={[
@@ -75,21 +77,21 @@ export default function CustomerServicesPricingScreen() {
           },
         ]}
       >
-        {/* Banner with Guarantee */}
-        <View style={[styles.guaranteeBanner, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF', borderColor: BRAND_COLORS.primaryBlue }]}>
+        {/* Pricing notes reflect the active catalogue rules. */}
+        <View style={[styles.guaranteeBanner, { backgroundColor: isDark ? '#222328' : '#FFF3CC', borderColor: BRAND_COLORS.primaryBlue }]}>
           <Ionicons name="shield-checkmark" size={24} color={BRAND_COLORS.primaryBlue} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.guaranteeTitle, { color: theme.textPrimary }]}>
-              100% Transparent Launch Rates • Zero Surge
+              Service base prices
             </Text>
             <Text style={[styles.guaranteeSub, { color: theme.textSecondary }]}>
-              Fixed official pricing across Tamil Nadu. Verified mechanics, genuine replacement parts, and upfront cost confirmation before work starts.
+              The listed amount is the base service price. Distance, peak or late-night charges and parts may change the final estimate. Review and approve any quote before work begins.
             </Text>
           </View>
         </View>
 
         {/* 2W vs 4W Toggle */}
-        <View style={[styles.vehicleToggleBar, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
+        <View style={[styles.vehicleToggleBar, { backgroundColor: isDark ? '#222328' : '#F1F2F4' }]}>
           <Pressable
             onPress={() => {
               setVehicleType('2W');
@@ -207,19 +209,19 @@ export default function CustomerServicesPricingScreen() {
                 </View>
                 <Badge
                   label={`₹${item.customerPrice.toLocaleString('en-IN')}`}
-                  variant="verified"
+                  variant="brand"
                   size="md"
                 />
               </View>
 
               <Text style={[styles.serviceDesc, { color: theme.textSecondary }]}>
-                {item.notes || 'Official transparent launch rate guaranteed across Tamil Nadu with zero surge fee.'}
+                {item.notes || `${item.standardLaborDurationMin} minutes standard labor. Parts are additional where required.`}
               </Text>
 
               <View style={styles.serviceFooterRow}>
                 <View style={styles.etaPill}>
-                  <Ionicons name="time-outline" size={13} color="#16A34A" />
-                  <Text style={styles.etaText}>15–25 mins dispatch</Text>
+                  <Ionicons name="time-outline" size={13} color={BRAND_COLORS.primaryBlue} />
+                  <Text style={styles.etaText}>{item.standardLaborDurationMin} min standard labor</Text>
                 </View>
 
                 <Pressable
@@ -238,8 +240,8 @@ export default function CustomerServicesPricingScreen() {
         </View>
       </View>
 
-      {/* Rapido-style Footer */}
-      <WebFooter />
+      {/* Shared footer navigation */}
+      {Platform.OS === 'web' && <WebFooter />}
     </ScreenContainer>
   );
 }

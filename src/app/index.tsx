@@ -46,18 +46,16 @@ export default function SplashScreen() {
       return;
     }
 
-    // On native iOS/Android, run standard brand splash & onboarding check
+    // On native iOS/Android, route directly to the visual auth flow for unauthenticated users
     const timer = setTimeout(() => {
-      if (!isOnboardingCompleted) {
-        router.replace('/onboarding');
-      } else if (isAuthenticated && role === 'customer') {
+      if (isAuthenticated && role === 'customer') {
         router.replace('/(customer)/(tabs)');
       } else if (isAuthenticated && role === 'mechanic') {
         router.replace('/(mechanic)/(tabs)');
       } else {
         router.replace('/(auth)/role-select');
       }
-    }, 1200);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [isLoading, isAuthenticated, role, isOnboardingCompleted]);
@@ -66,7 +64,7 @@ export default function SplashScreen() {
     <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.content, animatedStyle]}>
         <Image
-          source={require('../../assets/images/mechfind_logo.png')}
+          source={require('../../assets/images/app-emblem.png')}
           style={{ width: logoSize, height: logoSize }}
           resizeMode="contain"
           accessibilityLabel="MECHFIND Official Logo"

@@ -38,15 +38,9 @@ export const Card: React.FC<CardProps> = ({
       ? theme.border
       : 'transparent',
     borderWidth: highlighted ? 1.5 : bordered ? 1 : 0,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md + 2,
-    ...(elevated && !isDark ? {
-      shadowColor: '#142235',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 1,
-    } : {}),
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...(elevated && !isDark ? SHADOWS.sm : {}),
   };
 
   if (onPress) {

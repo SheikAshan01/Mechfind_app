@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -66,7 +65,6 @@ export default function BookAssistanceScreen() {
   const [vehicleType, setVehicleType] = useState<'2W' | '4W'>(initialVehicleType);
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('all');
 
-  // Find mechanic by ID or default to Apex Speed Garage
   const selectedMechanic =
     nearbyMechanics.find((m) => m.id === params.mechanicId) || nearbyMechanics[0];
 
@@ -147,39 +145,22 @@ export default function BookAssistanceScreen() {
   const renderWorkshopCard = () => (
     <Card style={styles.workshopCard}>
       <View style={styles.workshopRow}>
-        <Image
-          source={require('../../../assets/images/mechfind_logo.png')}
-          style={styles.workshopThumbLogo}
-          resizeMode="contain"
-          accessibilityLabel="MECHFIND Verified Workshop"
-        />
-
+        <View style={[styles.workshopThumbLogo, { alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? '#222328' : '#FFF3CC', borderRadius: 12 }]}>
+          <Ionicons name={selectedMechanic ? 'construct-outline' : 'search-outline'} size={20} color={BRAND_COLORS.primaryBlue} />
+        </View>
         <View style={styles.workshopInfo}>
-          <View style={styles.nameRow}>
-            <Text
-              style={[styles.workshopName, { color: theme.textPrimary }]}
-              numberOfLines={1}
-            >
-              {selectedMechanic?.shopName || 'Apex Speed Garage & Roadside Care'}
-            </Text>
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
-              color={BRAND_COLORS.successGreen}
-              style={{ marginLeft: 5 }}
-            />
-          </View>
-
-          <View style={styles.reviewRow}>
-            <Ionicons name="star" size={13} color="#F59E0B" />
+          <Text style={[styles.workshopName, { color: theme.textPrimary }]} numberOfLines={1}>
+            {selectedMechanic?.shopName || 'No mechanic selected'}
+          </Text>
+          {selectedMechanic ? (
             <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-              {selectedMechanic?.rating || 4.9} ({selectedMechanic?.reviewCount || 142} reviews)
+              {selectedMechanic.distanceKm} km away · Estimated {selectedMechanic.estimatedArrivalMinutes} min
             </Text>
-            <Text style={[styles.bulletDot, { color: theme.textSecondary }]}>•</Text>
+          ) : (
             <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-              ~{selectedMechanic?.distanceKm || 1.2} km away
+              A mechanic has not been assigned to this request.
             </Text>
-          </View>
+          )}
         </View>
       </View>
     </Card>
@@ -201,8 +182,8 @@ export default function BookAssistanceScreen() {
                 vehicleType === '2W'
                   ? BRAND_COLORS.primaryBlue
                   : isDark
-                  ? '#1E293B'
-                  : '#F1F5F9',
+                  ? '#222328'
+                  : '#F1F2F4',
               borderColor:
                 vehicleType === '2W' ? BRAND_COLORS.primaryBlue : theme.border,
             },
@@ -237,8 +218,8 @@ export default function BookAssistanceScreen() {
                 vehicleType === '4W'
                   ? BRAND_COLORS.primaryBlue
                   : isDark
-                  ? '#1E293B'
-                  : '#F1F5F9',
+                  ? '#222328'
+                  : '#F1F2F4',
               borderColor:
                 vehicleType === '4W' ? BRAND_COLORS.primaryBlue : theme.border,
             },
@@ -376,7 +357,7 @@ export default function BookAssistanceScreen() {
                   {
                     borderColor: isSelected
                       ? BRAND_COLORS.primaryBlue
-                      : '#94A3B8',
+                      : '#92959C',
                   },
                 ]}
               >

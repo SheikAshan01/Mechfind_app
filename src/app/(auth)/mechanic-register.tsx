@@ -197,7 +197,7 @@ export default function MechanicRegisterScreen() {
             Application Under Review
           </Text>
           <Text style={[styles.successSubtitle, { color: theme.textSecondary }]}>
-            Thank you, {fullName}. Your workshop registration for "{shopName}" has been received and queued for priority verification.
+            Thank you, {fullName}. Your workshop registration for {shopName} has been received.
           </Text>
 
           <Card elevated style={styles.slaCard}>
@@ -205,10 +205,10 @@ export default function MechanicRegisterScreen() {
               <Ionicons name="time" size={20} color={BRAND_COLORS.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.slaTitle, { color: theme.textPrimary }]}>
-                  Verification SLA: 2–4 Business Hours
+                  Registration submitted
                 </Text>
                 <Text style={[styles.slaText, { color: theme.textSecondary }]}>
-                  Our partner onboarding team will verify your workshop documents and send an SMS alert once active.
+                  Check your verification status for updates.
                 </Text>
               </View>
             </View>
@@ -261,7 +261,7 @@ export default function MechanicRegisterScreen() {
           </View>
 
           {/* Progress Bar Track */}
-          <View style={[styles.progressTrack, { backgroundColor: isDark ? '#1E293B' : '#E2E8F0' }]}>
+          <View style={[styles.progressTrack, { backgroundColor: isDark ? '#222328' : '#E5E6E9' }]}>
             <View
               style={[
                 styles.progressBar,
@@ -412,7 +412,7 @@ export default function MechanicRegisterScreen() {
                           backgroundColor: isSel
                             ? isDark
                               ? 'rgba(23, 105, 245, 0.25)'
-                              : '#EFF6FF'
+                              : '#FFF3CC'
                             : theme.card,
                           borderColor: isSel ? BRAND_COLORS.primary : theme.border,
                         },
@@ -458,7 +458,7 @@ export default function MechanicRegisterScreen() {
                           backgroundColor: isSel
                             ? isDark
                               ? 'rgba(23, 105, 245, 0.25)'
-                              : '#EFF6FF'
+                              : '#FFF3CC'
                             : theme.card,
                           borderColor: isSel ? BRAND_COLORS.primary : theme.border,
                         },

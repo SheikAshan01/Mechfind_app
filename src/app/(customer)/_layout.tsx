@@ -27,6 +27,9 @@ export default function CustomerLayout() {
       <Stack.Screen name="mechanic-details/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="live-tracking/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="vehicle-form" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="about" options={{ presentation: 'card' }} />
+      <Stack.Screen name="contact" options={{ presentation: 'card' }} />
+      <Stack.Screen name="become-mechanic" options={{ presentation: 'card' }} />
     </Stack>
   );
 }

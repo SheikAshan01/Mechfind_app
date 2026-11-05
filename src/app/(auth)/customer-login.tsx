@@ -1,343 +1,453 @@
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { BRAND_COLORS } from '../../theme/colors';
-import { RADIUS } from '../../theme/radius';
-import { SPACING } from '../../theme/spacing';
-import { TYPOGRAPHY } from '../../theme/typography';
-import { ScreenContainer } from '../../components/ui/ScreenContainer';
-import { Header } from '../../components/ui/Header';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { customerLoginSchema } from '../../schemas/authSchemas';
 import { useAuthStore } from '../../stores/authStore';
 import { useResponsive } from '../../hooks/useResponsive';
+import {
+  AuthCarHeader,
+  BottomLeftYellowGlow,
+} from '../../components/auth/AuthCarHeader';
 
-type LoginMode = 'password' | 'otp';
+const GoogleIcon = ({ size = 20 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+    />
+    <Path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+    />
+    <Path
+      fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+    />
+    <Path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+    />
+  </Svg>
+);
 
 export default function CustomerLoginScreen() {
-  const { theme, isDark } = useTheme();
-  const { horizontalPadding, isTablet, isDesktop } = useResponsive();
+  const insets = useSafeAreaInsets();
+  const { isTablet, isDesktop } = useResponsive();
   const loginCustomer = useAuthStore((state) => state.loginCustomer);
 
-  const [loginMode, setLoginMode] = useState<LoginMode>('password');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ phone?: string; password?: string; general?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string; password?: string; general?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
     setErrors({});
-
-    if (loginMode === 'otp') {
-      if (!phone || phone.replace(/\D/g, '').length < 10) {
-        setErrors({ phone: 'Please enter a valid 10-digit mobile number' });
-        return;
-      }
-      router.push({
-        pathname: '/(auth)/customer-otp',
-        params: { phone },
-      });
+    if (!identifier.trim()) {
+      setErrors({ identifier: 'Please enter your email or mobile number' });
       return;
     }
-
-    const validation = customerLoginSchema.safeParse({
-      phoneNumber: phone,
-      password: password,
-    });
-
-    if (!validation.success) {
-      const fieldErrors: { phone?: string; password?: string } = {};
-      validation.error.issues.forEach((err) => {
-        if (err.path[0] === 'phoneNumber') fieldErrors.phone = err.message;
-        if (err.path[0] === 'password') fieldErrors.password = err.message;
-      });
-      setErrors(fieldErrors);
+    if (!password || password.length < 6) {
+      setErrors({ password: 'Password must be at least 6 characters' });
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await loginCustomer(phone, 'Customer');
+      await loginCustomer(identifier, 'Customer');
       router.replace('/(customer)/(tabs)');
     } catch {
-      setErrors({ general: 'Invalid credentials. Please verify your phone number and password.' });
+      setErrors({ general: 'Invalid credentials. Please verify your details.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRequestOtp = () => {
-    if (!phone || phone.replace(/\D/g, '').length < 10) {
-      setErrors({ phone: 'Please enter a valid 10-digit mobile number first' });
-      return;
+  const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
+    try {
+      setIsSubmitting(true);
+      await loginCustomer(`user_${provider.toLowerCase()}@mechfind.com`, `${provider} User`);
+      router.replace('/(customer)/(tabs)');
+    } catch {
+      setErrors({ general: `${provider} sign in failed. Please try again.` });
+    } finally {
+      setIsSubmitting(false);
     }
-    router.push({
-      pathname: '/(auth)/customer-otp',
-      params: { phone },
-    });
   };
 
+  const isWide = isTablet || isDesktop;
+
   return (
-    <ScreenContainer scrollable withPadding={false}>
-      <Header title="Customer Login" showBack showThemeToggle />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
+    >
+      <StatusBar style="light" />
 
-      <View
-        style={[
-          styles.content,
-          {
-            paddingHorizontal: horizontalPadding,
-            maxWidth: isTablet || isDesktop ? 480 : undefined,
-            alignSelf: isTablet || isDesktop ? 'center' : undefined,
-            width: isTablet || isDesktop ? '100%' : undefined,
-          },
-        ]}
+      <ScrollView
+        bounces={false}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerArea}>
-          <Image
-            source={require('../../../assets/images/mechfind_logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-            accessibilityLabel="MECHFIND Official Logo"
-          />
-          <Text style={[styles.title, { color: theme.textPrimary }]}>
-            Welcome Back
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Log in to manage your vehicles and access 24/7 on-demand breakdown assistance.
-          </Text>
-        </View>
+        {/* Dark Automotive Header with Back Arrow & MECHFIND Emblem */}
+        <AuthCarHeader variant="compact" showBack onBack={() => router.replace('/(auth)/role-select')} />
 
-        {/* Tab Switcher: Password vs OTP Login */}
-        <View style={[styles.modeTabsRow, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-          <Pressable
-            onPress={() => {
-              setLoginMode('password');
-              setErrors({});
-            }}
-            style={[
-              styles.modeTab,
-              loginMode === 'password' && [
-                styles.modeTabActive,
-                { backgroundColor: theme.card },
-              ],
-            ]}
-          >
-            <Text
+        {/* Curved White Bottom Card */}
+        <View
+          style={[
+            styles.bottomSheet,
+            isWide && styles.bottomSheetWide,
+            { paddingBottom: Math.max(insets.bottom, 24) + 16 },
+          ]}
+        >
+          {/* Subtle bottom-left corner accent */}
+          <BottomLeftYellowGlow />
+
+          <View style={styles.sheetContent}>
+            <Text style={styles.heading}>Customer Login</Text>
+            <Text style={styles.subtitle}>
+              Welcome back! Please sign in to your account.
+            </Text>
+
+            {errors.general ? (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={18} color="#DC2626" />
+                <Text style={styles.errorText}>{errors.general}</Text>
+              </View>
+            ) : null}
+
+            {/* Input 1: Email or Mobile Number */}
+            <View
               style={[
-                styles.modeTabText,
-                {
-                  color:
-                    loginMode === 'password'
-                      ? BRAND_COLORS.primary
-                      : theme.textSecondary,
-                  fontWeight: loginMode === 'password' ? '700' : '500',
-                },
+                styles.inputWrapper,
+                errors.identifier ? styles.inputWrapperError : undefined,
               ]}
             >
-              Password Login
-            </Text>
-          </Pressable>
+              <Ionicons name="person-outline" size={20} color="#6B7280" />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Email or Mobile Number"
+                placeholderTextColor="#9CA3AF"
+                value={identifier}
+                onChangeText={(text) => {
+                  setIdentifier(text);
+                  if (errors.identifier) setErrors((prev) => ({ ...prev, identifier: undefined }));
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            {errors.identifier ? (
+              <Text style={styles.fieldErrorText}>{errors.identifier}</Text>
+            ) : null}
 
-          <Pressable
-            onPress={() => {
-              setLoginMode('otp');
-              setErrors({});
-            }}
-            style={[
-              styles.modeTab,
-              loginMode === 'otp' && [
-                styles.modeTabActive,
-                { backgroundColor: theme.card },
-              ],
-            ]}
-          >
-            <Text
+            {/* Input 2: Password */}
+            <View
               style={[
-                styles.modeTabText,
-                {
-                  color:
-                    loginMode === 'otp'
-                      ? BRAND_COLORS.primary
-                      : theme.textSecondary,
-                  fontWeight: loginMode === 'otp' ? '700' : '500',
-                },
+                styles.inputWrapper,
+                { marginTop: 14 },
+                errors.password ? styles.inputWrapperError : undefined,
               ]}
             >
-              Instant OTP Login
-            </Text>
-          </Pressable>
-        </View>
-
-        {errors.general ? (
-          <View style={[styles.errorBanner, { backgroundColor: theme.errorBg }]}>
-            <Ionicons name="alert-circle" size={18} color={theme.error} />
-            <Text style={[styles.errorBannerText, { color: theme.error }]}>
-              {errors.general}
-            </Text>
-          </View>
-        ) : null}
-
-        <Input
-          label="Mobile Number"
-          placeholder="Enter 10-digit mobile number"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-          error={errors.phone}
-          leftIcon={<Ionicons name="call-outline" size={20} color={theme.textSecondary} />}
-          maxLength={10}
-        />
-
-        {loginMode === 'password' ? (
-          <>
-            <Input
-              label="Password"
-              placeholder="Enter your account password"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-              error={errors.password}
-              leftIcon={<Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} />}
-              rightIcon={
-                <Pressable onPress={() => setShowPassword((prev) => !prev)} hitSlop={8}>
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={theme.textSecondary}
-                  />
-                </Pressable>
-              }
-            />
-
-            <View style={styles.forgotRow}>
+              <Ionicons name="lock-closed-outline" size={20} color="#6B7280" />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Password"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                }}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
               <Pressable
-                onPress={() => router.push('/(auth)/forgot-password')}
-                hitSlop={8}
-                accessibilityRole="button"
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.eyeButton}
               >
-                <Text style={[styles.forgotText, { color: BRAND_COLORS.primary }]}>
-                  Forgot Password?
-                </Text>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#6B7280"
+                />
+              </Pressable>
+            </View>
+            {errors.password ? (
+              <Text style={styles.fieldErrorText}>{errors.password}</Text>
+            ) : null}
+
+            {/* Forgot Password Link */}
+            <Pressable
+              onPress={() => router.push('/(auth)/forgot-password')}
+              style={styles.forgotPasswordButton}
+              accessibilityRole="link"
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </Pressable>
+
+            {/* Primary Login Button */}
+            <Pressable
+              onPress={handleLogin}
+              disabled={isSubmitting}
+              style={({ pressed }) => [
+                styles.loginButton,
+                { opacity: pressed || isSubmitting ? 0.9 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Login to customer account"
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#111827" size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>Login</Text>
+              )}
+            </Pressable>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Social Logins */}
+            <View style={styles.socialButtonsList}>
+              {/* Google Button */}
+              <Pressable
+                onPress={() => handleSocialLogin('Google')}
+                style={({ pressed }) => [
+                  styles.socialButton,
+                  { opacity: pressed ? 0.9 : 1 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Google"
+              >
+                <GoogleIcon size={20} />
+                <Text style={styles.socialButtonText}>Continue with Google</Text>
+              </Pressable>
+
+              {/* Apple Button */}
+              <Pressable
+                onPress={() => handleSocialLogin('Apple')}
+                style={({ pressed }) => [
+                  styles.socialButton,
+                  { opacity: pressed ? 0.9 : 1 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Apple"
+              >
+                <Ionicons name="logo-apple" size={22} color="#000000" />
+                <Text style={styles.socialButtonText}>Continue with Apple</Text>
               </Pressable>
             </View>
 
-            <Button
-              title="Sign In with Password"
-              onPress={handleLogin}
-              loading={isSubmitting}
-              style={styles.actionBtn}
-            />
-          </>
-        ) : (
-          <Button
-            title="Request Instant SMS OTP"
-            onPress={handleRequestOtp}
-            loading={isSubmitting}
-            style={styles.actionBtn}
-            icon={<Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />}
-          />
-        )}
-
-        <View style={styles.signupRow}>
-          <Text style={{ color: theme.textSecondary }}>Don't have an account? </Text>
-          <Pressable
-            onPress={() => router.push('/(auth)/customer-signup')}
-            hitSlop={8}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.signupLink, { color: BRAND_COLORS.primary }]}>
-              Create Customer Account
-            </Text>
-          </Pressable>
+            {/* Footer */}
+            <View style={styles.footerRow}>
+              <Text style={styles.footerPrompt}>Don't have an account? </Text>
+              <Pressable
+                onPress={() => router.push('/(auth)/customer-signup')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="link"
+              >
+                <Text style={styles.footerLink}>Sign Up</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
-    </ScreenContainer>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
+  screen: {
+    flex: 1,
+    backgroundColor: '#101114',
   },
-  headerArea: {
-    marginBottom: SPACING.lg,
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: '#101114',
   },
-  logoImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
-    marginBottom: SPACING.sm,
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -16,
+    paddingTop: 28,
+    paddingHorizontal: 22,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  title: {
-    ...TYPOGRAPHY.h2,
-    marginBottom: SPACING.xxs,
+  bottomSheetWide: {
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    borderRadius: 32,
+    marginTop: 0,
+    marginBottom: 32,
+  },
+  sheetContent: {
+    width: '100%',
+    zIndex: 2,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+    letterSpacing: -0.4,
   },
   subtitle: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 14,
     lineHeight: 20,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 24,
   },
-  modeTabsRow: {
+  errorBox: {
     flexDirection: 'row',
-    padding: 4,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.lg,
-    gap: 4,
-  },
-  modeTab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: RADIUS.sm,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    gap: 8,
   },
-  modeTabActive: {
-    elevation: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  modeTabText: {
+  errorText: {
     fontSize: 13,
+    color: '#DC2626',
+    flex: 1,
   },
-  forgotRow: {
-    alignItems: 'flex-end',
-    marginBottom: SPACING.md,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
   },
-  forgotText: {
-    ...TYPOGRAPHY.caption,
+  inputWrapperError: {
+    borderColor: '#DC2626',
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#111827',
+    marginLeft: 12,
+    paddingVertical: 0,
+  },
+  eyeButton: {
+    padding: 4,
+  },
+  fieldErrorText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginTop: 10,
+    marginBottom: 20,
+    paddingVertical: 4,
+  },
+  forgotPasswordText: {
+    fontSize: 13,
     fontWeight: '700',
+    color: '#D97706',
   },
-  actionBtn: {
-    marginTop: SPACING.xs,
-    marginBottom: SPACING.sm,
+  loginButton: {
+    height: 52,
+    backgroundColor: BRAND_COLORS.brandYellow,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: BRAND_COLORS.brandYellow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  signupRow: {
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginHorizontal: 12,
+  },
+  socialButtonsList: {
+    gap: 12,
+  },
+  socialButton: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  socialButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginLeft: 10,
+  },
+  footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.xl,
-    flexWrap: 'wrap',
+    marginTop: 24,
   },
-  signupLink: {
-    ...TYPOGRAPHY.bodyMedium,
+  footerPrompt: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  footerLink: {
+    fontSize: 14,
     fontWeight: '700',
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    padding: SPACING.md,
-    borderRadius: 8,
-    marginBottom: SPACING.md,
-  },
-  errorBannerText: {
-    ...TYPOGRAPHY.bodySmall,
-    flex: 1,
+    color: '#D97706',
   },
 });

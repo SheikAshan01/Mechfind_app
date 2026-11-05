@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { BRAND_COLORS } from '../../theme/colors';
@@ -10,21 +10,33 @@ import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
 import { MapFallback } from '../../components/ui/MapFallback';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { useCustomerStore } from '../../stores/customerStore';
 import { useResponsive } from '../../hooks/useResponsive';
 import { NearbyMechanic } from '../../types/mechanic';
+import { ResponsiveNav } from '../../components/navigation/ResponsiveNav';
+import { WebFooter } from '../../components/navigation/WebFooter';
 
-type FilterType = 'nearby' | 'rating' | 'price';
+type FilterType = 'within_7km' | 'nearby' | 'rating' | 'price';
+
+const ACCENT_YELLOW = '#FFC400';
 
 export default function NearbyMechanicsScreen() {
   const { theme, isDark } = useTheme();
   const { isSmallDevice, horizontalPadding, isTablet, isDesktop } = useResponsive();
   const { nearbyMechanics, currentLocation } = useCustomerStore();
+  const params = useLocalSearchParams<{ filter?: string }>();
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>('nearby');
+  const [activeFilter, setActiveFilter] = useState<FilterType>(
+    params.filter === 'within_7km' ? 'within_7km' : 'nearby'
+  );
 
   const filteredAndSorted = useMemo(() => {
-    const list = [...nearbyMechanics];
+    let list = [...nearbyMechanics];
+    if (activeFilter === 'within_7km') {
+      list = list.filter((m) => m.distanceKm <= 7);
+      return list.sort((a, b) => a.distanceKm - b.distanceKm);
+    }
     if (activeFilter === 'rating') {
       return list.sort((a, b) => b.rating - a.rating);
     }
@@ -44,10 +56,13 @@ export default function NearbyMechanicsScreen() {
   const mapHeight = isSmallDevice ? 170 : 190;
 
   const renderFilters = () =>
-    (['nearby', 'rating', 'price'] as FilterType[]).map((filter) => {
+    (['within_7km', 'nearby', 'rating', 'price'] as FilterType[]).map((filter) => {
       const isSelected = activeFilter === filter;
+      const is7Km = filter === 'within_7km';
       const label =
-        filter === 'nearby'
+        filter === 'within_7km'
+          ? '⚡ Within 7 km'
+          : filter === 'nearby'
           ? 'Nearby'
           : filter === 'rating'
           ? 'Rating'
@@ -61,11 +76,23 @@ export default function NearbyMechanicsScreen() {
             styles.filterPill,
             {
               backgroundColor: isSelected
-                ? BRAND_COLORS.primaryBlue
-                : theme.card,
+                ? is7Km
+                  ? ACCENT_YELLOW
+                  : isDark
+                  ? '#FFFFFF'
+                  : '#101114'
+                : isDark
+                ? '#1A1B1F'
+                : '#FFFFFF',
               borderColor: isSelected
-                ? BRAND_COLORS.primaryBlue
-                : theme.border,
+                ? is7Km
+                  ? ACCENT_YELLOW
+                  : isDark
+                  ? '#FFFFFF'
+                  : '#101114'
+                : isDark
+                ? '#2D3139'
+                : '#E5E7EB',
             },
           ]}
           hitSlop={4}
@@ -74,8 +101,16 @@ export default function NearbyMechanicsScreen() {
             style={[
               styles.filterPillText,
               {
-                color: isSelected ? '#FFFFFF' : theme.textPrimary,
-                fontWeight: isSelected ? '700' : '500',
+                color: isSelected
+                  ? is7Km
+                    ? '#101114'
+                    : isDark
+                    ? '#101114'
+                    : '#FFFFFF'
+                  : isDark
+                  ? '#E5E7EB'
+                  : '#1F2937',
+                fontWeight: isSelected ? '700' : '600',
               },
             ]}
           >
@@ -88,12 +123,18 @@ export default function NearbyMechanicsScreen() {
   const renderMechanicCard = ({ item }: { item: NearbyMechanic }) => (
     <Card
       onPress={() => handleSelectMechanic(item)}
-      style={styles.mechanicCard}
+      style={[
+        styles.mechanicCard,
+        {
+          backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+          borderColor: isDark ? '#2D3139' : '#E5E7EB',
+        },
+      ]}
     >
       <View style={styles.cardRow}>
         {/* Workshop Thumbnail Icon / Official Emblem */}
         <Image
-          source={require('../../../assets/images/mechfind_logo.png')}
+          source={require('../../../assets/images/app-emblem.png')}
           style={styles.shopLogoThumb}
           resizeMode="contain"
           accessibilityLabel="MECHFIND Verified Garage"
@@ -103,7 +144,7 @@ export default function NearbyMechanicsScreen() {
         <View style={styles.detailsCol}>
           <View style={styles.titleRow}>
             <Text
-              style={[styles.shopName, { color: theme.textPrimary }]}
+              style={[styles.shopName, { color: isDark ? '#FFFFFF' : '#101114' }]}
               numberOfLines={1}
             >
               {item.shopName}
@@ -114,26 +155,31 @@ export default function NearbyMechanicsScreen() {
               color={BRAND_COLORS.successGreen}
               style={{ marginLeft: 4 }}
             />
+            {item.distanceKm <= 7 && (
+              <View style={styles.within7KmBadge}>
+                <Text style={styles.within7KmBadgeText}>Within 7 km</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={13} color="#F59E0B" />
-            <Text style={[styles.ratingScore, { color: theme.textSecondary }]}>
+            <Text style={[styles.ratingScore, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
               {item.rating} ({item.reviewCount || 98})
             </Text>
-            <Text style={[styles.dot, { color: theme.textSecondary }]}>•</Text>
-            <Text style={[styles.distanceText, { color: theme.textSecondary }]}>
+            <Text style={[styles.dot, { color: isDark ? '#9CA3AF' : '#747B87' }]}>•</Text>
+            <Text style={[styles.distanceText, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
               {item.distanceKm} km
             </Text>
           </View>
 
           <View style={styles.bottomMetaRow}>
-            <Text style={[styles.startingPrice, { color: theme.textPrimary }]}>
+            <Text style={[styles.startingPrice, { color: isDark ? '#FFFFFF' : '#101114' }]}>
               ₹{item.pricingStartingAt || 199} Starting
             </Text>
             <View style={styles.etaContainer}>
-              <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
-              <Text style={[styles.etaText, { color: theme.textSecondary }]}>
+              <Ionicons name="time-outline" size={12} color={isDark ? '#9CA3AF' : '#747B87'} />
+              <Text style={[styles.etaText, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
                 ~{item.estimatedArrivalMinutes || 10} mins
               </Text>
             </View>
@@ -145,7 +191,15 @@ export default function NearbyMechanicsScreen() {
 
   return (
     <ScreenContainer withPadding={false} edges={['top', 'left', 'right']}>
-      <Header title="Nearby Mechanics" showBack showThemeToggle />
+      {Platform.OS === 'web' ? (
+        <ResponsiveNav />
+      ) : (
+        <Header
+          title="Verified Mechanics (Within 7 km Radius)"
+          showBack
+          showThemeToggle
+        />
+      )}
 
       <View
         style={[
@@ -158,7 +212,46 @@ export default function NearbyMechanicsScreen() {
           },
         ]}
       >
-        {isDesktop ? (
+        {/* Radius Title Highlight Banner */}
+        <View
+          style={[
+            styles.radiusBanner,
+            {
+              backgroundColor: isDark ? '#1C1910' : '#FFFBEB',
+              borderColor: isDark ? '#4D3B00' : '#FDE68A',
+            },
+          ]}
+        >
+          <Ionicons name="shield-checkmark" size={18} color={ACCENT_YELLOW} />
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.radiusBannerTitle,
+                { color: isDark ? '#FFC400' : '#92400E' },
+              ]}
+            >
+              Mechanics within 7 km Radius
+            </Text>
+            <Text
+              style={[
+                styles.radiusBannerSub,
+                { color: isDark ? '#D1D5DB' : '#78350F' },
+              ]}
+            >
+              Rapid response within 10–15 mins for doorstep & breakdown assistance
+            </Text>
+          </View>
+        </View>
+
+        {filteredAndSorted.length === 0 ? (
+          <EmptyState
+            icon="location-outline"
+            title="No mechanics within 7 km"
+            description="No active mechanics found within 7 km right now. Try expanding your search filter to 'Nearby' to see all available workshops."
+            actionTitle="Show All Nearby"
+            onActionPress={() => setActiveFilter('nearby')}
+          />
+        ) : isDesktop ? (
           <View style={styles.desktopLayout}>
             {/* Left Column: Filter Pills + Scrollable Mechanic Cards */}
             <View style={styles.desktopListCol}>
@@ -190,8 +283,8 @@ export default function NearbyMechanicsScreen() {
               <Card style={styles.desktopMetaCard}>
                 <View style={styles.desktopMetaRow}>
                   <Ionicons name="shield-checkmark" size={20} color={BRAND_COLORS.successGreen} />
-                  <Text style={[styles.desktopMetaText, { color: theme.textPrimary }]}>
-                    All {nearbyMechanics.length} garages are verified with genuine spares guarantee and live roadside arrival.
+                  <Text style={[styles.desktopMetaText, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+                    All displayed mechanics have verified workshops within your active 7 km service radius.
                   </Text>
                 </View>
               </Card>
@@ -228,6 +321,7 @@ export default function NearbyMechanicsScreen() {
           </>
         )}
       </View>
+      {Platform.OS === 'web' && <WebFooter />}
     </ScreenContainer>
   );
 }
@@ -241,7 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E6E9',
     marginBottom: SPACING.sm,
   },
   filterRow: {
@@ -352,7 +446,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E6E9',
     marginBottom: SPACING.md,
   },
   desktopMetaCard: {
@@ -368,5 +462,35 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
     fontWeight: '500',
+  },
+  radiusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginBottom: SPACING.sm + 4,
+  },
+  radiusBannerTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  radiusBannerSub: {
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+  within7KmBadge: {
+    backgroundColor: '#FFC400',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  within7KmBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#101114',
   },
 });

@@ -77,7 +77,7 @@ export default function MechanicJobDetailsScreen() {
         <View
           style={[
             styles.avatarCircle,
-            { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' },
+            { backgroundColor: isDark ? '#222328' : '#FFF3CC' },
           ]}
         >
           <Ionicons name="person" size={24} color={BRAND_COLORS.primaryBlue} />

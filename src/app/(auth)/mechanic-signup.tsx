@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -66,15 +66,18 @@ export default function MechanicSignupScreen() {
             maxWidth: isTablet ? 480 : undefined,
             alignSelf: isTablet ? 'center' : undefined,
             width: isTablet ? '100%' : undefined,
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
           },
         ]}
       >
         <View style={styles.headerArea}>
+          <Image source={require('../../../assets/images/app-emblem.png')} style={styles.logoImage} resizeMode="contain" accessibilityLabel="MECHFIND app emblem" />
           <Text style={[styles.title, { color: theme.textPrimary }]}>
             Partner With MECHFIND
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Join the verified roadside mechanics network. Start by registering your workshop details.
+            Create a mechanic account and add your workshop details to get started.
           </Text>
         </View>
 
@@ -150,19 +153,35 @@ export default function MechanicSignupScreen() {
 
 const styles = StyleSheet.create({
   content: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderRadius: 24,
   },
   headerArea: {
     marginBottom: SPACING.lg,
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 60,
+    height: 60,
+    marginBottom: SPACING.sm,
   },
   title: {
     ...TYPOGRAPHY.h2,
     marginBottom: SPACING.xxs,
+    textAlign: 'center',
   },
   subtitle: {
     ...TYPOGRAPHY.bodySmall,
     lineHeight: 20,
+    textAlign: 'center',
   },
   submitBtn: {
     marginTop: SPACING.xs,

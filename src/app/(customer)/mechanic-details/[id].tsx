@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -14,6 +14,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { useCustomerStore } from '../../../stores/customerStore';
 import { useResponsive } from '../../../hooks/useResponsive';
+import { ResponsiveNav } from '../../../components/navigation/ResponsiveNav';
 
 export default function MechanicDetailsScreen() {
   const { theme, isDark } = useTheme();
@@ -33,7 +34,7 @@ export default function MechanicDetailsScreen() {
 
   return (
     <ScreenContainer scrollable withPadding={false}>
-      <Header title="Mechanic Profile" showBack showThemeToggle />
+      {Platform.OS === 'web' ? <ResponsiveNav /> : <Header title="Mechanic Profile" showBack showThemeToggle />}
 
       <View
         style={[
@@ -124,7 +125,7 @@ export default function MechanicDetailsScreen() {
               { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
           >
-            <Ionicons name="ribbon" size={18} color="#3B82F6" />
+            <Ionicons name="ribbon" size={18} color="#FFC400" />
             <Text style={[styles.statVal, { color: theme.textPrimary }]}>
               {mechanic.yearsOfExperience} Yrs
             </Text>
@@ -231,7 +232,7 @@ export default function MechanicDetailsScreen() {
                 </View>
               </View>
               <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>
-                "{rev.comment}"
+                {'“'}{rev.comment}{'”'}
               </Text>
             </Card>
           ))

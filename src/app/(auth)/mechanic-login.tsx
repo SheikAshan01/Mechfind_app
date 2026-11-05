@@ -76,31 +76,29 @@ export default function MechanicLoginScreen() {
             maxWidth: isTablet || isDesktop ? 480 : undefined,
             alignSelf: isTablet || isDesktop ? 'center' : undefined,
             width: isTablet || isDesktop ? '100%' : undefined,
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
           },
         ]}
       >
         <View style={styles.headerArea}>
           <Image
-            source={require('../../../assets/images/mechfind_logo.png')}
+            source={require('../../../assets/images/app-emblem.png')}
             style={styles.logoImage}
             resizeMode="contain"
             accessibilityLabel="MECHFIND Partner Logo"
           />
-          <View style={styles.badgeRow}>
-            <View style={[styles.partnerBadge, { backgroundColor: BRAND_COLORS.primary }]}>
-              <Text style={styles.partnerBadgeText}>VERIFIED MECHANIC NETWORK</Text>
-            </View>
-          </View>
+          <View style={styles.partnerBadge}><Text style={styles.partnerBadgeText}>MECHFIND PARTNER</Text></View>
           <Text style={[styles.title, { color: theme.textPrimary }]}>
             Partner Sign In
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Access your active roadside assistance dispatches, incoming breakdowns and daily payouts.
+            Sign in to manage your workshop, services and service requests.
           </Text>
         </View>
 
         {/* Tab Switcher: Password vs OTP */}
-        <View style={[styles.modeTabsRow, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
+        <View style={[styles.modeTabsRow, { backgroundColor: isDark ? '#222328' : '#F1F2F4' }]}>
           <Pressable
             onPress={() => {
               setLoginMode('password');
@@ -110,7 +108,7 @@ export default function MechanicLoginScreen() {
               styles.modeTab,
               loginMode === 'password' && [
                 styles.modeTabActive,
-                { backgroundColor: theme.card },
+                { backgroundColor: theme.accent },
               ],
             ]}
           >
@@ -120,7 +118,7 @@ export default function MechanicLoginScreen() {
                 {
                   color:
                     loginMode === 'password'
-                      ? BRAND_COLORS.primary
+                      ? '#17181C'
                       : theme.textSecondary,
                   fontWeight: loginMode === 'password' ? '700' : '500',
                 },
@@ -139,7 +137,7 @@ export default function MechanicLoginScreen() {
               styles.modeTab,
               loginMode === 'otp' && [
                 styles.modeTabActive,
-                { backgroundColor: theme.card },
+                { backgroundColor: theme.accent },
               ],
             ]}
           >
@@ -149,13 +147,13 @@ export default function MechanicLoginScreen() {
                 {
                   color:
                     loginMode === 'otp'
-                      ? BRAND_COLORS.primary
+                      ? '#17181C'
                       : theme.textSecondary,
                   fontWeight: loginMode === 'otp' ? '700' : '500',
                 },
               ]}
             >
-              Instant OTP Login
+              OTP Login
             </Text>
           </Pressable>
         </View>
@@ -210,7 +208,7 @@ export default function MechanicLoginScreen() {
             </View>
 
             <Button
-              title="Sign In to Workshop"
+              title="Sign In"
               onPress={handleLogin}
               loading={isSubmitting}
               style={styles.actionBtn}
@@ -218,11 +216,11 @@ export default function MechanicLoginScreen() {
           </>
         ) : (
           <Button
-            title="Request Partner SMS OTP"
+            title="Send OTP"
             onPress={handleLogin}
             loading={isSubmitting}
             style={styles.actionBtn}
-            icon={<Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />}
+            icon={<Ionicons name="chatbubble-ellipses-outline" size={18} color="#17181C" />}
           />
         )}
 
@@ -241,40 +239,51 @@ export default function MechanicLoginScreen() {
 
 const styles = StyleSheet.create({
   content: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderRadius: 24,
   },
   headerArea: {
     marginBottom: SPACING.lg,
+    alignItems: 'center',
   },
   logoImage: {
     width: 64,
     height: 64,
     borderRadius: 12,
     marginBottom: SPACING.sm,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    marginBottom: SPACING.xs,
+    alignSelf: 'center',
   },
   partnerBadge: {
+    alignSelf: 'center',
+    backgroundColor: '#FFF3CC',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: SPACING.xs,
   },
   partnerBadgeText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#17181C',
     letterSpacing: 0.5,
   },
   title: {
     ...TYPOGRAPHY.h2,
     marginBottom: SPACING.xxs,
+    textAlign: 'center',
   },
   subtitle: {
     ...TYPOGRAPHY.bodySmall,
     lineHeight: 20,
+    textAlign: 'center',
   },
   modeTabsRow: {
     flexDirection: 'row',
