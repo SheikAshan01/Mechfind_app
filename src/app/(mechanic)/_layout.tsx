@@ -10,7 +10,7 @@ export default function MechanicLayout() {
 
     // Strict RBAC: Mechanic portal requires authenticated mechanic session
     if (!isAuthenticated) {
-      router.replace('/(auth)/mechanic-login');
+      router.replace('/(auth)/role-select');
     } else if (role !== 'mechanic') {
       router.replace('/(customer)/(tabs)');
     }

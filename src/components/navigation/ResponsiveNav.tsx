@@ -11,9 +11,11 @@ import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { useResponsive } from '../../hooks/useResponsive';
+import { MechfindLogo } from '../ui/MechfindLogo';
 
 interface ResponsiveNavProps {
   mode?: 'customer' | 'mechanic';
+  activeNav?: string;
 }
 
 interface NavLinkItem {
@@ -78,7 +80,7 @@ const SERVICE_ITEMS: ServiceMenuItem[] = [
   },
 ];
 
-export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer' }) => {
+export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer', activeNav }) => {
   const { isDark, toggleTheme } = useTheme();
   const { width } = useResponsive();
   const pathname = usePathname();
@@ -115,10 +117,40 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer' 
   const links = onMechanicPortal ? mechanicNavLinks : customerNavLinks;
 
   const isLinkActive = (route: string, label: string) => {
-    if (label === 'Home') {
-      return pathname === '/' || pathname === '/(customer)/(tabs)' || pathname === '/(customer)/(tabs)/';
+    if (activeNav) {
+      return activeNav.trim().toLowerCase() === label.trim().toLowerCase();
     }
-    return pathname === route || pathname.startsWith(route);
+
+    const current = (pathname || '').toLowerCase().replace(/\/\([^)]+\)/g, '');
+    const target = route.toLowerCase().replace(/\/\([^)]+\)/g, '');
+
+    if (label === 'Home') {
+      return current === '' || current === '/' || current === '/index';
+    }
+    if (label === 'Services') {
+      return current.includes('services');
+    }
+    if (label === 'Find a Mechanic') {
+      return current.includes('nearby-mechanics') || current.includes('mechanic-details');
+    }
+    if (label === 'Bookings') {
+      return (
+        current.includes('requests') ||
+        current.includes('booking') ||
+        current.includes('live-tracking')
+      );
+    }
+    if (label === 'My Vehicles') {
+      return current.includes('vehicles') || current.includes('garage');
+    }
+    if (label === 'About') {
+      return current.includes('about');
+    }
+    if (label === 'Contact') {
+      return current.includes('contact');
+    }
+
+    return current === target || current.startsWith(target);
   };
 
   const handleMouseEnter = () => {
@@ -162,15 +194,7 @@ export const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ mode = 'customer' 
           accessibilityRole="link"
           accessibilityLabel="MECHFIND Home"
         >
-          <Image
-            source={
-              isDark
-                ? require('../../../assets/images/mechfind-logo-dark.png')
-                : require('../../../assets/images/mechfind-logo-light.png')
-            }
-            style={styles.logoImg}
-            resizeMode="contain"
-          />
+          <MechfindLogo isDark={isDark} width={146} height={42} />
         </Pressable>
 
         {/* Desktop Center Links */}
@@ -797,6 +821,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 4,
+  },
+  serviceTagText: {
+    fontSize: 9.5,
+    fontWeight: '800',
   },
   serviceTagYellow: {
     backgroundColor: '#FEF3C7',

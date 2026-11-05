@@ -100,29 +100,30 @@ export default function CustomerLoginScreen() {
 
       <ScrollView
         bounces={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          isWide && styles.scrollContainerWide,
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Dark Automotive Header with Back Arrow & MECHFIND Emblem */}
-        <AuthCarHeader variant="compact" showBack onBack={() => router.replace('/(auth)/role-select')} />
+        <View style={isWide ? styles.desktopCardBox : styles.mobileBox}>
+          {/* Dark Automotive Header with Back Arrow & MECHFIND Emblem */}
+          <AuthCarHeader variant="compact" showBack onBack={() => router.replace('/(auth)/role-select')} />
 
-        {/* Curved White Bottom Card */}
-        <View
-          style={[
-            styles.bottomSheet,
-            isWide && styles.bottomSheetWide,
-            { paddingBottom: Math.max(insets.bottom, 24) + 16 },
-          ]}
-        >
-          {/* Subtle bottom-left corner accent */}
-          <BottomLeftYellowGlow />
-
-          <View style={styles.sheetContent}>
-            <Text style={styles.heading}>Customer Login</Text>
-            <Text style={styles.subtitle}>
-              Welcome back! Please sign in to your account.
-            </Text>
+          {/* Curved White Bottom Card */}
+          <View
+            style={[
+              styles.bottomSheet,
+              isWide && styles.bottomSheetWide,
+              { paddingBottom: Math.max(insets.bottom, 24) + 16 },
+            ]}
+          >
+            <View style={styles.sheetContent}>
+              <Text style={styles.heading}>Customer Login</Text>
+              <Text style={styles.subtitle}>
+                Welcome back! Please sign in to your account.
+              </Text>
 
             {errors.general ? (
               <View style={styles.errorBox}>
@@ -271,6 +272,7 @@ export default function CustomerLoginScreen() {
             </View>
           </View>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -284,6 +286,32 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     backgroundColor: '#101114',
+  },
+  scrollContainerWide: {
+    minHeight: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 20,
+    backgroundColor: '#090A0C',
+  },
+  desktopCardBox: {
+    width: '100%',
+    maxWidth: 480,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#101114',
+    borderWidth: 1,
+    borderColor: '#23252B',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 32,
+    elevation: 16,
+  },
+  mobileBox: {
+    width: '100%',
+    flex: 1,
   },
   bottomSheet: {
     flex: 1,
@@ -302,12 +330,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   bottomSheetWide: {
-    maxWidth: 500,
-    width: '100%',
-    alignSelf: 'center',
-    borderRadius: 32,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     marginTop: 0,
-    marginBottom: 32,
+    marginBottom: 0,
+    paddingHorizontal: 28,
+    borderRadius: 0,
+    maxWidth: '100%',
   },
   sheetContent: {
     width: '100%',

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../theme/ThemeContext';
 import { BRAND_COLORS } from '../../../theme/colors';
@@ -70,6 +71,36 @@ export default function CustomerProfileScreen() {
     action: async () => {},
   });
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [isPickingPhoto, setIsPickingPhoto] = useState(false);
+
+  const handlePickLocalPhoto = async () => {
+    try {
+      setIsPickingPhoto(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setEditAvatarUrl(result.assets[0].uri);
+        setEditFeedback({
+          type: 'success',
+          message: 'Local photo selected! Tap "Save Changes" to apply.',
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to pick image:', err);
+      setEditFeedback({
+        type: 'error',
+        message: 'Could not select photo. Please check permissions.',
+      });
+    } finally {
+      setIsPickingPhoto(false);
+    }
+  };
 
   const openEditModal = () => {
     setEditName(user?.fullName || 'Ashan Kumar');
@@ -702,25 +733,46 @@ export default function CustomerProfileScreen() {
               </Text>
 
               <View style={styles.avatarSelectionRow}>
-                {/* Current Avatar Preview */}
-                <Image
-                  source={
-                    editAvatarUrl
-                      ? { uri: editAvatarUrl }
-                      : require('../../../../assets/images/customer-profile-avatar.png')
-                  }
-                  style={styles.modalAvatarPreview}
-                  resizeMode="cover"
-                />
+                {/* Current Avatar Preview with tap to upload */}
+                <Pressable
+                  onPress={handlePickLocalPhoto}
+                  style={styles.modalAvatarPreviewWrap}
+                  accessibilityLabel="Tap to choose local photo from device"
+                >
+                  <Image
+                    source={
+                      editAvatarUrl
+                        ? { uri: editAvatarUrl }
+                        : require('../../../../assets/images/customer-profile-avatar.png')
+                    }
+                    style={styles.modalAvatarPreview}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.modalAvatarCameraIcon}>
+                    <Ionicons name="camera" size={13} color="#101114" />
+                  </View>
+                </Pressable>
 
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, gap: 8 }}>
+                  {/* Primary: Local Photo Upload Button */}
+                  <Pressable
+                    onPress={handlePickLocalPhoto}
+                    style={styles.uploadLocalBtn}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="cloud-upload-outline" size={17} color="#101114" />
+                    <Text style={styles.uploadLocalBtnText}>
+                      {isPickingPhoto ? 'Selecting...' : 'Upload from Device'}
+                    </Text>
+                  </Pressable>
+
                   <Text
                     style={[
                       styles.presetLabel,
                       { color: isDark ? '#9CA3AF' : '#6B7280' },
                     ]}
                   >
-                    Select avatar preset or enter URL below:
+                    Or choose an avatar preset:
                   </Text>
                   <View style={styles.avatarPresetsContainer}>
                     {AVATAR_PRESETS.map((presetUrl, idx) => {
@@ -1308,6 +1360,38 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     borderWidth: 2,
     borderColor: ACCENT_YELLOW,
+  },
+  modalAvatarPreviewWrap: {
+    position: 'relative',
+    alignSelf: 'flex-start',
+  },
+  modalAvatarCameraIcon: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: ACCENT_YELLOW,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  uploadLocalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: ACCENT_YELLOW,
+    borderRadius: 10,
+    height: 36,
+    paddingHorizontal: 12,
+  },
+  uploadLocalBtnText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#101114',
   },
   presetLabel: {
     fontSize: 11.5,

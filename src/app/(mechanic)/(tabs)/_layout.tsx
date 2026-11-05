@@ -76,6 +76,12 @@ export default function MechanicTabsLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="services-pricing"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
     </View>
   );

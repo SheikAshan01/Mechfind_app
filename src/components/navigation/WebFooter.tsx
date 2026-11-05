@@ -3,6 +3,7 @@ import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 're
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useResponsive } from '../../hooks/useResponsive';
+import { MechfindLogo } from '../ui/MechfindLogo';
 
 export const WebFooter: React.FC = () => {
   const { width } = useResponsive();
@@ -29,12 +30,7 @@ export const WebFooter: React.FC = () => {
         <View style={[styles.columnsGrid, isDesktop ? styles.grid5Col : isTablet ? styles.grid2Col : styles.grid1Col]}>
           {/* Col 1: Brand Info & Socials */}
           <View style={styles.brandCol}>
-            <Image
-              source={require('../../../assets/images/mechfind-logo-dark.png')}
-              style={styles.footerLogo}
-              resizeMode="contain"
-              accessibilityLabel="MECHFIND"
-            />
+            <MechfindLogo isDark={true} width={140} height={40} style={{ marginBottom: 14 }} />
             <Text style={styles.brandTagline}>
               On-demand vehicle service and roadside assistance, anytime, anywhere.
             </Text>

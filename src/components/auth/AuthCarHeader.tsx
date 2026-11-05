@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useResponsive } from '../../hooks/useResponsive';
+import { MechfindLogo } from '../ui/MechfindLogo';
 
 export const TopRightYellowStripes = () => (
   <View pointerEvents="none" style={styles.topRightAccents}>
@@ -61,28 +62,25 @@ export const AuthCarHeader: React.FC<AuthCarHeaderProps> = ({
 
   if (variant === 'welcome') {
     const isWide = isTablet || isDesktop || width >= 768;
-    const heroHeight = isWide ? 330 : Math.min(Math.max(width * 0.72, 260), 340);
+    const heroHeight = isWide ? 260 : Math.min(Math.max(width * 0.72, 260), 340);
 
     return (
-      <View style={[styles.welcomeWrapper, { backgroundColor: '#101114' }]}>
-        <View
-          style={[
-            styles.welcomeContainer,
-            {
-              height: heroHeight,
-              maxWidth: isWide ? 620 : '100%',
-              paddingTop: topPadding,
-            },
-          ]}
-        >
-          <TopRightYellowStripes />
-          <Image
-            source={require('../../../assets/images/welcome-hero-car.png')}
-            style={styles.welcomeHeroImage}
-            resizeMode={isWide ? 'contain' : 'cover'}
-            accessibilityLabel="MechFind luxury sports car header"
-          />
-        </View>
+      <View
+        style={[
+          styles.welcomeContainer,
+          {
+            height: heroHeight,
+            paddingTop: isWide ? 16 : topPadding,
+          },
+        ]}
+      >
+        <TopRightYellowStripes />
+        <Image
+          source={require('../../../assets/images/welcome-hero-car.png')}
+          style={styles.welcomeHeroImage}
+          resizeMode="cover"
+          accessibilityLabel="MechFind luxury sports car header"
+        />
       </View>
     );
   }
@@ -111,12 +109,7 @@ export const AuthCarHeader: React.FC<AuthCarHeaderProps> = ({
         )}
 
         <View style={styles.emblemWrapper}>
-          <Image
-            source={require('../../../assets/images/mechfind-logo-dark.png')}
-            style={styles.headerLogoImage}
-            resizeMode="contain"
-            accessibilityLabel="MECHFIND Official Emblem"
-          />
+          <MechfindLogo isDark={true} width={140} height={40} />
         </View>
       </View>
     </View>
