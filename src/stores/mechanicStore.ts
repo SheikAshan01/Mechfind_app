@@ -260,9 +260,71 @@ export const useMechanicStore = create<MechanicState>((set, get) => ({
     const target = incomingRequests.find((r) => r.id === requestId);
     if (!target) return;
 
+    let mechanicData: any = null;
+    try {
+      const { useAuthStore } = require('./authStore');
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser && currentUser.role === 'mechanic') {
+        mechanicData = {
+          id: currentUser.id,
+          fullName: currentUser.fullName || 'Verified Workshop Partner',
+          shopName: currentUser.shopName || 'Apex Speed Garage',
+          phoneNumber: currentUser.phoneNumber || '+91 98201 12345',
+          rating: 4.9,
+          reviewCount: 142,
+          distanceKm: 2.1,
+          estimatedArrivalMinutes: 12,
+          isVerified: true,
+          latitude: 10.3673,
+          longitude: 77.9803,
+          avatarUrl: currentUser.avatarUrl,
+        };
+      }
+    } catch {}
+
+    if (!mechanicData) {
+      mechanicData = {
+        id: 'mech_apex_01',
+        fullName: 'Ramesh Kumar',
+        shopName: 'Apex Speed Garage',
+        shopAddress: 'SV Road, Dindigul West, Tamil Nadu',
+        phoneNumber: '+91 98201 12345',
+        rating: 4.9,
+        reviewCount: 142,
+        completedJobsCount: 480,
+        yearsOfExperience: 10,
+        isVerified: true,
+        verificationStatus: 'approved' as const,
+        isOnline: true,
+        distanceKm: 2.1,
+        estimatedArrivalMinutes: 12,
+        latitude: 10.3673,
+        longitude: 77.9803,
+        vehicleTypes: ['car', 'bike'] as ('bike' | 'car' | 'truck')[],
+        specializations: ['Flat Tyre', 'Battery Jumpstart', 'Brake Assistance'],
+        pricingStartingAt: 199,
+        workingHours: '24/7 Roadside Assistance',
+      };
+    } else {
+      mechanicData = {
+        shopAddress: 'SV Road, Dindigul West, Tamil Nadu',
+        completedJobsCount: 480,
+        yearsOfExperience: 10,
+        verificationStatus: 'approved' as const,
+        isOnline: true,
+        vehicleTypes: ['car', 'bike'] as ('bike' | 'car' | 'truck')[],
+        specializations: ['Flat Tyre', 'Battery Jumpstart', 'Brake Assistance'],
+        pricingStartingAt: 199,
+        workingHours: '24/7 Roadside Assistance',
+        ...mechanicData,
+      };
+    }
+
     const acceptedJob: BreakdownRequest = {
       ...target,
       status: 'accepted',
+      mechanicId: mechanicData.id,
+      mechanic: mechanicData,
       assignedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       etaMinutes: 12,
@@ -273,10 +335,10 @@ export const useMechanicStore = create<MechanicState>((set, get) => ({
       incomingRequests: state.incomingRequests.filter((r) => r.id !== requestId),
     }));
 
-    // Cross-sync: Update customer store in real time
+    // Cross-sync: Update customer store in real time with the accepted mechanic's details
     try {
       const { useCustomerStore } = require('./customerStore');
-      useCustomerStore.getState().updateRequestStatus(requestId, 'accepted');
+      useCustomerStore.getState().updateRequestStatus(requestId, 'accepted', mechanicData);
     } catch {}
 
     notificationService.sendLocalNotification(

@@ -129,7 +129,7 @@ export default function BookAssistanceScreen() {
         landmark: landmarkText || 'Breakdown location',
         urgency: 'high',
         estimatedCost: selectedService.customerPrice,
-        mechanicId: selectedMechanic?.id,
+        mechanicId: undefined,
       });
 
       setIsSubmitting(false);
@@ -142,25 +142,35 @@ export default function BookAssistanceScreen() {
     }
   };
 
-  const renderWorkshopCard = () => (
-    <Card style={styles.workshopCard}>
-      <View style={styles.workshopRow}>
-        <View style={[styles.workshopThumbLogo, { alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? '#222328' : '#FFF3CC', borderRadius: 12 }]}>
-          <Ionicons name={selectedMechanic ? 'construct-outline' : 'search-outline'} size={20} color={BRAND_COLORS.primaryBlue} />
+  const renderAutoDispatchCard = () => (
+    <Card style={styles.autoDispatchCard}>
+      <View style={styles.autoDispatchRow}>
+        <View style={[styles.autoDispatchIconWrap, { backgroundColor: isDark ? '#222328' : '#FEF3C7' }]}>
+          <Ionicons name="flash" size={24} color="#FFC400" />
         </View>
-        <View style={styles.workshopInfo}>
-          <Text style={[styles.workshopName, { color: theme.textPrimary }]} numberOfLines={1}>
-            {selectedMechanic?.shopName || 'No mechanic selected'}
+        <View style={styles.autoDispatchInfo}>
+          <View style={styles.autoDispatchHeader}>
+            <Text style={[styles.autoDispatchTitle, { color: theme.textPrimary }]}>
+              MECHFIND Instant Dispatch
+            </Text>
+            <View style={styles.liveDispatchBadge}>
+              <View style={styles.pulsingGreenDot} />
+              <Text style={styles.liveDispatchBadgeText}>LIVE</Text>
+            </View>
+          </View>
+          <Text style={[styles.autoDispatchSubtitle, { color: theme.textSecondary }]}>
+            Auto-dispatches to the nearest verified workshop within 15 km upon request.
           </Text>
-          {selectedMechanic ? (
-            <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-              {selectedMechanic.distanceKm} km away · Estimated {selectedMechanic.estimatedArrivalMinutes} min
-            </Text>
-          ) : (
-            <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
-              A mechanic has not been assigned to this request.
-            </Text>
-          )}
+          <View style={styles.autoDispatchGuarantees}>
+            <View style={styles.guaranteeTag}>
+              <Ionicons name="checkmark-circle" size={13} color="#16A34A" />
+              <Text style={[styles.guaranteeTagText, { color: theme.textSecondary }]}>10-15 Min ETA</Text>
+            </View>
+            <View style={styles.guaranteeTag}>
+              <Ionicons name="shield-checkmark" size={13} color="#16A34A" />
+              <Text style={[styles.guaranteeTagText, { color: theme.textSecondary }]}>Verified Technicians</Text>
+            </View>
+          </View>
         </View>
       </View>
     </Card>
@@ -482,9 +492,9 @@ export default function BookAssistanceScreen() {
             {/* Left Column: Workshop Info + Vehicle + Landmark + Policy */}
             <View style={styles.desktopLeftCol}>
               <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                Assigned Verified Workshop
+                Instant Auto-Dispatch Network
               </Text>
-              {renderWorkshopCard()}
+              {renderAutoDispatchCard()}
 
               <Text style={[styles.sectionTitle, { color: theme.textPrimary, marginTop: SPACING.md }]}>
                 Vehicle Selection & Category
@@ -542,15 +552,16 @@ export default function BookAssistanceScreen() {
                   style={({ pressed }: { pressed: boolean }) => [
                     styles.confirmButton,
                     {
-                      backgroundColor: BRAND_COLORS.primaryBlue,
+                      backgroundColor: '#FFC400',
                       opacity: pressed || isSubmitting ? 0.9 : 1,
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Confirm Booking"
+                  accessibilityLabel="Find Mechanic"
                 >
-                  <Text style={styles.confirmButtonText}>
-                    Confirm Booking (₹{selectedService ? selectedService.customerPrice : 0})
+                  <Ionicons name="flash" size={18} color="#101114" style={{ marginRight: 6 }} />
+                  <Text style={[styles.confirmButtonText, { color: '#101114' }]}>
+                    Find Mechanic (Instant Dispatch) • ₹{selectedService ? selectedService.customerPrice : 0}
                   </Text>
                 </Pressable>
               </View>
@@ -559,7 +570,7 @@ export default function BookAssistanceScreen() {
         ) : (
           <>
             {/* Mobile Stacked Flow */}
-            {renderWorkshopCard()}
+            {renderAutoDispatchCard()}
 
             <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
               Vehicle & Type
@@ -611,15 +622,16 @@ export default function BookAssistanceScreen() {
                 style={({ pressed }: { pressed: boolean }) => [
                   styles.confirmButton,
                   {
-                    backgroundColor: BRAND_COLORS.primaryBlue,
+                    backgroundColor: '#FFC400',
                     opacity: pressed || isSubmitting ? 0.9 : 1,
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Confirm Booking"
+                accessibilityLabel="Find Mechanic"
               >
-                <Text style={styles.confirmButtonText}>
-                  Confirm Booking (₹{selectedService ? selectedService.customerPrice : 0})
+                <Ionicons name="flash" size={18} color="#101114" style={{ marginRight: 6 }} />
+                <Text style={[styles.confirmButtonText, { color: '#101114' }]}>
+                  Find Mechanic (Instant Dispatch) • ₹{selectedService ? selectedService.customerPrice : 0}
                 </Text>
               </Pressable>
             </View>
@@ -633,6 +645,77 @@ export default function BookAssistanceScreen() {
 const styles = StyleSheet.create({
   contentWrapper: {
     paddingVertical: SPACING.md,
+  },
+  autoDispatchCard: {
+    padding: 14,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  autoDispatchRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  autoDispatchIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoDispatchInfo: {
+    flex: 1,
+  },
+  autoDispatchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  autoDispatchTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  liveDispatchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(22, 163, 74, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 5,
+  },
+  pulsingGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  liveDispatchBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
+  autoDispatchSubtitle: {
+    fontSize: 12.5,
+    lineHeight: 17,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  autoDispatchGuarantees: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  guaranteeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  guaranteeTagText: {
+    fontSize: 11.5,
+    fontWeight: '600',
   },
   workshopCard: {
     padding: 12,

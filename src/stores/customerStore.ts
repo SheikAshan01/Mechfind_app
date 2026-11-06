@@ -38,7 +38,11 @@ interface CustomerState {
     mechanicId?: string;
   }) => BreakdownRequest;
   cancelRequest: (requestId: string, reason: string) => void;
-  updateRequestStatus: (requestId: string, status: BreakdownRequest['status']) => void;
+  updateRequestStatus: (
+    requestId: string,
+    status: BreakdownRequest['status'],
+    mechanic?: NearbyMechanic
+  ) => void;
   respondToQuote: (requestId: string, decision: 'approved' | 'rejected', rejectionReason?: string) => void;
   rateMechanic: (mechanicId: string, rating: number, comment: string) => void;
 }
@@ -145,12 +149,8 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   },
 
   createBreakdownRequest: (params) => {
-    const { vehicles, currentLocation, nearbyMechanics } = get();
+    const { vehicles, currentLocation } = get();
     const vehicle = vehicles.find((v) => v.id === params.vehicleId) || vehicles[0];
-    const targetMechanic =
-      nearbyMechanics.find((m) => m.id === params.mechanicId) ||
-      MOCK_MECHANICS.find((m) => m.id === params.mechanicId) ||
-      MOCK_MECHANICS[0];
 
     let custId = 'cust_01';
     let custName = 'Customer';
@@ -166,6 +166,8 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       }
     } catch {}
 
+    // Rapido / On-Demand Flow: Newly booked request begins in 'submitted' (searching for nearby mechanics)
+    // No driver/mechanic details are assigned until a mechanic accepts
     const newRequest: BreakdownRequest = {
       id: `req_${Date.now()}`,
       customerId: custId,
@@ -185,9 +187,9 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       status: 'submitted',
       urgency: params.urgency,
       estimatedCost: params.estimatedCost,
-      mechanicId: targetMechanic.id,
-      mechanic: targetMechanic,
-      etaMinutes: targetMechanic.estimatedArrivalMinutes || 12,
+      mechanicId: undefined,
+      mechanic: undefined,
+      etaMinutes: undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -196,11 +198,11 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     set({ requests: updated });
     crudPersistenceService.saveRequests(updated);
 
-    // Realtime Dispatch: Deliver incoming request to mechanic workspace
+    // Realtime Dispatch: Deliver broadcast request to mechanic workspace
     try {
       const { useMechanicStore } = require('./mechanicStore');
       useMechanicStore.setState((prev: any) => ({
-        incomingRequests: [newRequest, ...prev.incomingRequests],
+        incomingRequests: [newRequest, ...(prev.incomingRequests || [])],
       }));
     } catch {}
 
@@ -222,12 +224,20 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     crudPersistenceService.saveRequests(updated);
   },
 
-  updateRequestStatus: (requestId, status) => {
+  updateRequestStatus: (requestId, status, mechanic) => {
     const updated = get().requests.map((r) =>
       r.id === requestId
         ? {
             ...r,
             status,
+            ...(mechanic
+              ? {
+                  mechanic,
+                  mechanicId: mechanic.id,
+                  etaMinutes: mechanic.estimatedArrivalMinutes || 12,
+                  assignedAt: new Date().toISOString(),
+                }
+              : {}),
             updatedAt: new Date().toISOString(),
             ...(status === 'completed' ? { completedAt: new Date().toISOString() } : {}),
           }

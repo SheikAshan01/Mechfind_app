@@ -1,5 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -10,184 +19,155 @@ import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
 import { MapFallback } from '../../components/ui/MapFallback';
-import { EmptyState } from '../../components/ui/EmptyState';
 import { useCustomerStore } from '../../stores/customerStore';
 import { useResponsive } from '../../hooks/useResponsive';
-import { NearbyMechanic } from '../../types/mechanic';
 import { ResponsiveNav } from '../../components/navigation/ResponsiveNav';
 import { WebFooter } from '../../components/navigation/WebFooter';
-
-type FilterType = 'within_7km' | 'nearby' | 'rating' | 'price';
+import { locationService } from '../../services/location/locationService';
 
 const ACCENT_YELLOW = '#FFC400';
 
+interface ServiceOption {
+  id: string;
+  category: 'battery_jumpstart' | 'flat_tyre' | 'general_diagnostics' | 'engine_overheating' | 'brake_failure' | 'fuel_delivery';
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  price2W: number;
+  price4W: number;
+  desc: string;
+}
+
+const SERVICE_OPTIONS: ServiceOption[] = [
+  {
+    id: 'battery',
+    category: 'battery_jumpstart',
+    title: 'Battery Jumpstart',
+    icon: 'battery-charging',
+    price2W: 199,
+    price4W: 399,
+    desc: 'Jumpstart cables & voltage test',
+  },
+  {
+    id: 'tyre',
+    category: 'flat_tyre',
+    title: 'Flat Tyre & Puncture',
+    icon: 'disc',
+    price2W: 149,
+    price4W: 299,
+    desc: 'Puncture repair & stepney change',
+  },
+  {
+    id: 'breakdown',
+    category: 'general_diagnostics',
+    title: 'Breakdown Diagnostics',
+    icon: 'construct',
+    price2W: 249,
+    price4W: 499,
+    desc: 'On-spot engine & electrical check',
+  },
+  {
+    id: 'oil',
+    category: 'engine_overheating',
+    title: 'Engine & Oil Check',
+    icon: 'water',
+    price2W: 199,
+    price4W: 399,
+    desc: 'Coolant & engine oil inspection',
+  },
+  {
+    id: 'brake',
+    category: 'brake_failure',
+    title: 'Brake Assistance',
+    icon: 'speedometer',
+    price2W: 199,
+    price4W: 399,
+    desc: 'Brake pads, fluid & pedal check',
+  },
+  {
+    id: 'fuel',
+    category: 'fuel_delivery',
+    title: 'Emergency Fuel / Tow',
+    icon: 'car',
+    price2W: 299,
+    price4W: 599,
+    desc: 'Emergency fuel or flatbed towing',
+  },
+];
+
 export default function NearbyMechanicsScreen() {
   const { theme, isDark } = useTheme();
-  const { isSmallDevice, horizontalPadding, isTablet, isDesktop } = useResponsive();
-  const { nearbyMechanics, currentLocation } = useCustomerStore();
-  const params = useLocalSearchParams<{ filter?: string }>();
+  const { horizontalPadding, isTablet, isDesktop } = useResponsive();
+  const {
+    currentLocation,
+    setCurrentLocation,
+    vehicles,
+    selectedVehicleId,
+    createBreakdownRequest,
+  } = useCustomerStore();
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>(
-    params.filter === 'within_7km' ? 'within_7km' : 'nearby'
+  const [vehicleType, setVehicleType] = useState<'2W' | '4W'>('4W');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('battery');
+  const [addressInput, setAddressInput] = useState<string>(
+    currentLocation?.address || 'SV Road, Near Bus Stand, Dindigul'
+  );
+  const [isLocating, setIsLocating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedService = useMemo(
+    () => SERVICE_OPTIONS.find((s) => s.id === selectedServiceId) || SERVICE_OPTIONS[0],
+    [selectedServiceId]
   );
 
-  const filteredAndSorted = useMemo(() => {
-    let list = [...nearbyMechanics];
-    if (activeFilter === 'within_7km') {
-      list = list.filter((m) => m.distanceKm <= 7);
-      return list.sort((a, b) => a.distanceKm - b.distanceKm);
-    }
-    if (activeFilter === 'rating') {
-      return list.sort((a, b) => b.rating - a.rating);
-    }
-    if (activeFilter === 'price') {
-      return list.sort((a, b) => (a.pricingStartingAt || 199) - (b.pricingStartingAt || 199));
-    }
-    return list.sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [nearbyMechanics, activeFilter]);
+  const currentPrice = vehicleType === '2W' ? selectedService.price2W : selectedService.price4W;
 
-  const handleSelectMechanic = (mechanic: NearbyMechanic) => {
-    router.push({
-      pathname: '/(customer)/breakdown-request',
-      params: { mechanicId: mechanic.id },
-    });
+  const handleDetectLocation = async () => {
+    setIsLocating(true);
+    try {
+      const loc = await locationService.getCurrentLocation();
+      if (loc && loc.address) {
+        setAddressInput(loc.address);
+        setCurrentLocation({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          address: loc.address,
+        });
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setIsLocating(false);
+    }
   };
 
-  const mapHeight = isSmallDevice ? 170 : 190;
+  const handleInstantDispatch = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-  const renderFilters = () =>
-    (['within_7km', 'nearby', 'rating', 'price'] as FilterType[]).map((filter) => {
-      const isSelected = activeFilter === filter;
-      const is7Km = filter === 'within_7km';
-      const label =
-        filter === 'within_7km'
-          ? '⚡ Within 7 km'
-          : filter === 'nearby'
-          ? 'Nearby'
-          : filter === 'rating'
-          ? 'Rating'
-          : 'Price';
+    try {
+      const activeVeh =
+        vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0];
 
-      return (
-        <Pressable
-          key={filter}
-          onPress={() => setActiveFilter(filter)}
-          style={[
-            styles.filterPill,
-            {
-              backgroundColor: isSelected
-                ? is7Km
-                  ? ACCENT_YELLOW
-                  : isDark
-                  ? '#FFFFFF'
-                  : '#101114'
-                : isDark
-                ? '#1A1B1F'
-                : '#FFFFFF',
-              borderColor: isSelected
-                ? is7Km
-                  ? ACCENT_YELLOW
-                  : isDark
-                  ? '#FFFFFF'
-                  : '#101114'
-                : isDark
-                ? '#2D3139'
-                : '#E5E7EB',
-            },
-          ]}
-          hitSlop={4}
-        >
-          <Text
-            style={[
-              styles.filterPillText,
-              {
-                color: isSelected
-                  ? is7Km
-                    ? '#101114'
-                    : isDark
-                    ? '#101114'
-                    : '#FFFFFF'
-                  : isDark
-                  ? '#E5E7EB'
-                  : '#1F2937',
-                fontWeight: isSelected ? '700' : '600',
-              },
-            ]}
-          >
-            {label}
-          </Text>
-        </Pressable>
-      );
-    });
+      const newRequest = createBreakdownRequest({
+        vehicleId: activeVeh ? activeVeh.id : 'veh_default',
+        category: selectedService.category,
+        categoryName: `${selectedService.title} (${vehicleType})`,
+        description: `On-demand roadside assistance: ${selectedService.title} requested at ${addressInput}`,
+        photos: [],
+        landmark: 'Breakdown Spot',
+        urgency: 'high',
+        estimatedCost: currentPrice,
+        mechanicId: undefined, // Rapido on-demand: broadcasted, not pre-assigned!
+      });
 
-  const renderMechanicCard = ({ item }: { item: NearbyMechanic }) => (
-    <Card
-      onPress={() => handleSelectMechanic(item)}
-      style={[
-        styles.mechanicCard,
-        {
-          backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
-          borderColor: isDark ? '#2D3139' : '#E5E7EB',
-        },
-      ]}
-    >
-      <View style={styles.cardRow}>
-        {/* Workshop Thumbnail Icon / Official Emblem */}
-        <Image
-          source={require('../../../assets/images/app-emblem.png')}
-          style={styles.shopLogoThumb}
-          resizeMode="contain"
-          accessibilityLabel="MECHFIND Verified Garage"
-        />
-
-        {/* Details Column */}
-        <View style={styles.detailsCol}>
-          <View style={styles.titleRow}>
-            <Text
-              style={[styles.shopName, { color: isDark ? '#FFFFFF' : '#101114' }]}
-              numberOfLines={1}
-            >
-              {item.shopName}
-            </Text>
-            <Ionicons
-              name="checkmark-circle"
-              size={15}
-              color={BRAND_COLORS.successGreen}
-              style={{ marginLeft: 4 }}
-            />
-            {item.distanceKm <= 7 && (
-              <View style={styles.within7KmBadge}>
-                <Text style={styles.within7KmBadgeText}>Within 7 km</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={13} color="#F59E0B" />
-            <Text style={[styles.ratingScore, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
-              {item.rating} ({item.reviewCount || 98})
-            </Text>
-            <Text style={[styles.dot, { color: isDark ? '#9CA3AF' : '#747B87' }]}>•</Text>
-            <Text style={[styles.distanceText, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
-              {item.distanceKm} km
-            </Text>
-          </View>
-
-          <View style={styles.bottomMetaRow}>
-            <Text style={[styles.startingPrice, { color: isDark ? '#FFFFFF' : '#101114' }]}>
-              ₹{item.pricingStartingAt || 199} Starting
-            </Text>
-            <View style={styles.etaContainer}>
-              <Ionicons name="time-outline" size={12} color={isDark ? '#9CA3AF' : '#747B87'} />
-              <Text style={[styles.etaText, { color: isDark ? '#9CA3AF' : '#747B87' }]}>
-                ~{item.estimatedArrivalMinutes || 10} mins
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </Card>
-  );
+      setIsSubmitting(false);
+      router.replace({
+        pathname: '/(customer)/live-tracking/[id]',
+        params: { id: newRequest.id },
+      });
+    } catch {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <ScreenContainer withPadding={false} edges={['top', 'left', 'right']}>
@@ -195,302 +175,497 @@ export default function NearbyMechanicsScreen() {
         <ResponsiveNav />
       ) : (
         <Header
-          title="Verified Mechanics (Within 7 km Radius)"
+          title="Find a Mechanic (Instant Dispatch)"
           showBack
           showThemeToggle
         />
       )}
 
-      <View
-        style={[
-          styles.containerWrapper,
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
           {
             paddingHorizontal: horizontalPadding,
-            maxWidth: isDesktop ? 1280 : isTablet ? 840 : undefined,
+            maxWidth: isDesktop ? 1200 : isTablet ? 840 : undefined,
             alignSelf: isTablet || isDesktop ? 'center' : undefined,
             width: isTablet || isDesktop ? '100%' : undefined,
           },
         ]}
       >
-        {/* Radius Title Highlight Banner */}
+        {/* ========================================================= */}
+        {/* 1. TOP DISPATCH RADAR BANNER                              */}
+        {/* ========================================================= */}
         <View
           style={[
-            styles.radiusBanner,
+            styles.radarBanner,
             {
-              backgroundColor: isDark ? '#1C1910' : '#FFFBEB',
-              borderColor: isDark ? '#4D3B00' : '#FDE68A',
+              backgroundColor: isDark ? '#16171B' : '#101114',
+              borderColor: isDark ? '#2D3139' : '#1F2024',
             },
           ]}
         >
-          <Ionicons name="shield-checkmark" size={18} color={ACCENT_YELLOW} />
-          <View style={{ flex: 1 }}>
+          <View style={styles.radarBannerHeader}>
+            <View style={styles.liveNetworkBadge}>
+              <View style={styles.pulsingDot} />
+              <Text style={styles.liveNetworkBadgeText}>LIVE DISPATCH NETWORK</Text>
+            </View>
+            <View style={styles.radiusPill}>
+              <Ionicons name="flash" size={13} color="#101114" />
+              <Text style={styles.radiusPillText}>15 km Coverage</Text>
+            </View>
+          </View>
+
+          <Text style={styles.radarBannerTitle}>
+            On-Demand Roadside Assistance
+          </Text>
+          <Text style={styles.radarBannerSub}>
+            Broadcasting to verified workshops and mobile mechanics near you. Like Rapido, your technician will be assigned live upon dispatch.
+          </Text>
+        </View>
+
+        {/* ========================================================= */}
+        {/* 2. LOCATION BAR                                           */}
+        {/* ========================================================= */}
+        <Card
+          style={[
+            styles.locationCard,
+            {
+              backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+              borderColor: isDark ? '#2D3139' : '#E5E7EB',
+            },
+          ]}
+        >
+          <View style={styles.locationRow}>
+            <Ionicons name="location-sharp" size={22} color={ACCENT_YELLOW} />
+            <TextInput
+              style={[
+                styles.locationInput,
+                { color: isDark ? '#FFFFFF' : '#101114' },
+              ]}
+              value={addressInput}
+              onChangeText={setAddressInput}
+              placeholder="Enter your breakdown location..."
+              placeholderTextColor="#9CA3AF"
+            />
+            <Pressable
+              onPress={handleDetectLocation}
+              style={styles.detectBtn}
+              hitSlop={6}
+              accessibilityLabel="Detect GPS"
+            >
+              <Ionicons
+                name="locate-outline"
+                size={20}
+                color={isLocating ? ACCENT_YELLOW : isDark ? '#9CA3AF' : '#6B7280'}
+              />
+            </Pressable>
+          </View>
+        </Card>
+
+        {/* ========================================================= */}
+        {/* 3. VEHICLE TYPE TOGGLE (2W vs 4W)                         */}
+        {/* ========================================================= */}
+        <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#101114' }]}>
+          Vehicle Type
+        </Text>
+        <View style={styles.vehicleToggleRow}>
+          <Pressable
+            onPress={() => setVehicleType('2W')}
+            style={[
+              styles.vehicleTypeBtn,
+              {
+                backgroundColor:
+                  vehicleType === '2W'
+                    ? ACCENT_YELLOW
+                    : isDark
+                    ? '#1A1B1F'
+                    : '#FFFFFF',
+                borderColor:
+                  vehicleType === '2W'
+                    ? ACCENT_YELLOW
+                    : isDark
+                    ? '#2D3139'
+                    : '#E5E7EB',
+              },
+            ]}
+          >
+            <Ionicons
+              name="bicycle"
+              size={18}
+              color={vehicleType === '2W' ? '#101114' : isDark ? '#FFFFFF' : '#101114'}
+            />
             <Text
               style={[
-                styles.radiusBannerTitle,
-                { color: isDark ? '#FFC400' : '#92400E' },
+                styles.vehicleTypeBtnText,
+                {
+                  color: vehicleType === '2W' ? '#101114' : isDark ? '#FFFFFF' : '#101114',
+                  fontWeight: vehicleType === '2W' ? '800' : '600',
+                },
               ]}
             >
-              Mechanics within 7 km Radius
+              Two-Wheeler (2W)
             </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setVehicleType('4W')}
+            style={[
+              styles.vehicleTypeBtn,
+              {
+                backgroundColor:
+                  vehicleType === '4W'
+                    ? ACCENT_YELLOW
+                    : isDark
+                    ? '#1A1B1F'
+                    : '#FFFFFF',
+                borderColor:
+                  vehicleType === '4W'
+                    ? ACCENT_YELLOW
+                    : isDark
+                    ? '#2D3139'
+                    : '#E5E7EB',
+              },
+            ]}
+          >
+            <Ionicons
+              name="car-sport"
+              size={18}
+              color={vehicleType === '4W' ? '#101114' : isDark ? '#FFFFFF' : '#101114'}
+            />
             <Text
               style={[
-                styles.radiusBannerSub,
-                { color: isDark ? '#D1D5DB' : '#78350F' },
+                styles.vehicleTypeBtnText,
+                {
+                  color: vehicleType === '4W' ? '#101114' : isDark ? '#FFFFFF' : '#101114',
+                  fontWeight: vehicleType === '4W' ? '800' : '600',
+                },
               ]}
             >
-              Rapid response within 10–15 mins for doorstep & breakdown assistance
+              Four-Wheeler (4W)
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* ========================================================= */}
+        {/* 4. SERVICE CATEGORIES GRID                                */}
+        {/* ========================================================= */}
+        <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#101114', marginTop: 18 }]}>
+          Select Roadside Service
+        </Text>
+        <View style={styles.servicesGrid}>
+          {SERVICE_OPTIONS.map((svc) => {
+            const isSelected = selectedServiceId === svc.id;
+            const price = vehicleType === '2W' ? svc.price2W : svc.price4W;
+
+            return (
+              <Pressable
+                key={svc.id}
+                onPress={() => setSelectedServiceId(svc.id)}
+                style={[
+                  styles.serviceGridCard,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+                    borderColor: isSelected
+                      ? ACCENT_YELLOW
+                      : isDark
+                      ? '#2D3139'
+                      : '#E5E7EB',
+                    borderWidth: isSelected ? 2 : 1,
+                  },
+                ]}
+              >
+                <View style={styles.serviceTopRow}>
+                  <View
+                    style={[
+                      styles.serviceIconCircle,
+                      {
+                        backgroundColor: isSelected
+                          ? ACCENT_YELLOW
+                          : isDark
+                          ? '#2A2B30'
+                          : '#F3F4F6',
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={svc.icon}
+                      size={20}
+                      color={isSelected ? '#101114' : isDark ? '#FFFFFF' : '#101114'}
+                    />
+                  </View>
+                  <Text style={styles.servicePriceText}>₹{price}</Text>
+                </View>
+
+                <Text
+                  style={[
+                    styles.serviceCardTitle,
+                    { color: isDark ? '#FFFFFF' : '#101114' },
+                  ]}
+                >
+                  {svc.title}
+                </Text>
+                <Text style={styles.serviceCardDesc} numberOfLines={2}>
+                  {svc.desc}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* ========================================================= */}
+        {/* 5. LIVE COVERAGE MAP PREVIEW                              */}
+        {/* ========================================================= */}
+        <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#101114', marginTop: 18 }]}>
+          Live Broadcast Area (15 km)
+        </Text>
+        <View style={styles.mapContainer}>
+          <MapFallback
+            height={180}
+            userLocation={{
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+            }}
+          />
+          <View style={styles.mapOverlayPill}>
+            <Ionicons name="radio" size={14} color="#16A34A" />
+            <Text style={styles.mapOverlayPillText}>
+              Broadcast Active: 15 km Radius
             </Text>
           </View>
         </View>
 
-        {filteredAndSorted.length === 0 ? (
-          <EmptyState
-            icon="location-outline"
-            title="No mechanics within 7 km"
-            description="No active mechanics found within 7 km right now. Try expanding your search filter to 'Nearby' to see all available workshops."
-            actionTitle="Show All Nearby"
-            onActionPress={() => setActiveFilter('nearby')}
-          />
-        ) : isDesktop ? (
-          <View style={styles.desktopLayout}>
-            {/* Left Column: Filter Pills + Scrollable Mechanic Cards */}
-            <View style={styles.desktopListCol}>
-              <View style={styles.filterRow}>{renderFilters()}</View>
-              <FlatList
-                data={filteredAndSorted}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
-                renderItem={renderMechanicCard}
-              />
-            </View>
+        {/* ========================================================= */}
+        {/* 6. RAPIDO-STYLE INSTANT DISPATCH CTA                      */}
+        {/* ========================================================= */}
+        <View style={styles.ctaBottomWrap}>
+          <Pressable
+            onPress={handleInstantDispatch}
+            disabled={isSubmitting}
+            style={({ pressed }) => [
+              styles.dispatchCtaBtn,
+              { opacity: pressed || isSubmitting ? 0.9 : 1 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Find Mechanic Instant Dispatch"
+          >
+            <Ionicons name="flash" size={20} color="#101114" />
+            <Text style={styles.dispatchCtaBtnText}>
+              ⚡ Find Mechanic (Instant Dispatch) • ₹{currentPrice}
+            </Text>
+          </Pressable>
+          <Text style={styles.ctaFootnote}>
+            No dummy listings • Real-time technician assignment with live GPS route
+          </Text>
+        </View>
+      </ScrollView>
 
-            {/* Right Column: Large Interactive Map & Live Coverage Info */}
-            <View style={styles.desktopMapCol}>
-              <View style={styles.mapWrapDesktop}>
-                <MapFallback
-                  height={520}
-                  userLocation={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                  }}
-                  nearbyMechanics={nearbyMechanics.map((m) => ({
-                    latitude: m.latitude,
-                    longitude: m.longitude,
-                  }))}
-                />
-              </View>
-              <Card style={styles.desktopMetaCard}>
-                <View style={styles.desktopMetaRow}>
-                  <Ionicons name="shield-checkmark" size={20} color={BRAND_COLORS.successGreen} />
-                  <Text style={[styles.desktopMetaText, { color: isDark ? '#FFFFFF' : '#101114' }]}>
-                    All displayed mechanics have verified workshops within your active 7 km service radius.
-                  </Text>
-                </View>
-              </Card>
-            </View>
-          </View>
-        ) : (
-          <>
-            {/* Top Radar Map View */}
-            <View style={styles.mapWrap}>
-              <MapFallback
-                height={mapHeight}
-                userLocation={{
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                }}
-                nearbyMechanics={nearbyMechanics.map((m) => ({
-                  latitude: m.latitude,
-                  longitude: m.longitude,
-                }))}
-              />
-            </View>
-
-            {/* Filter Pills */}
-            <View style={styles.filterRow}>{renderFilters()}</View>
-
-            {/* Mechanic Cards List */}
-            <FlatList
-              data={filteredAndSorted}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-              renderItem={renderMechanicCard}
-            />
-          </>
-        )}
-      </View>
       {Platform.OS === 'web' && <WebFooter />}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  containerWrapper: {
-    flex: 1,
-    paddingTop: SPACING.xs,
+  scrollContent: {
+    paddingVertical: SPACING.md,
+    paddingBottom: SPACING.xxl,
   },
-  mapWrap: {
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
+  radarBanner: {
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E6E9',
-    marginBottom: SPACING.sm,
+    padding: 18,
+    marginBottom: 16,
   },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: SPACING.md,
-  },
-  filterPill: {
-    flex: 1,
-    height: 38,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterPillText: {
-    fontSize: 13,
-  },
-  listContent: {
-    paddingBottom: SPACING.xl,
-  },
-  mechanicCard: {
-    marginBottom: SPACING.sm + 2,
-    padding: 12,
-  },
-  cardRow: {
+  radarBannerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  shopThumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shopLogoThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-  },
-  detailsCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
+  liveNetworkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    backgroundColor: 'rgba(22, 163, 74, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
   },
-  shopName: {
-    fontSize: 15,
-    fontWeight: '700',
-    flexShrink: 1,
+  pulsingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
   },
-  ratingRow: {
+  liveNetworkBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#16A34A',
+    letterSpacing: 0.5,
+  },
+  radiusPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: ACCENT_YELLOW,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
     gap: 4,
-    marginBottom: 4,
   },
-  ratingScore: {
-    fontSize: 12,
-    fontWeight: '600',
+  radiusPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#101114',
   },
-  dot: {
-    fontSize: 12,
+  radarBannerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
-  distanceText: {
-    fontSize: 12,
+  radarBannerSub: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    lineHeight: 18,
+    marginTop: 4,
   },
-  bottomMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  startingPrice: {
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
-  etaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  etaText: {
-    fontSize: 11.5,
-  },
-  desktopLayout: {
-    flexDirection: 'row',
-    gap: 24,
-    flex: 1,
-    alignItems: 'flex-start',
-    paddingTop: SPACING.sm,
-  },
-  desktopListCol: {
-    flex: 1.1,
-    minWidth: 420,
-  },
-  desktopMapCol: {
-    flex: 1,
-    minWidth: 420,
-    position: 'sticky' as any,
-    top: 20,
-  },
-  mapWrapDesktop: {
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
+  locationCard: {
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E6E9',
-    marginBottom: SPACING.md,
+    marginBottom: 16,
   },
-  desktopMetaCard: {
-    padding: SPACING.md,
-  },
-  desktopMetaRow: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  desktopMetaText: {
-    fontSize: 13,
+  locationInput: {
     flex: 1,
-    lineHeight: 18,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 2,
   },
-  radiusBanner: {
+  detectBtn: {
+    padding: 6,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    marginBottom: 10,
+  },
+  vehicleToggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 6,
+  },
+  vehicleTypeBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    marginBottom: SPACING.sm + 4,
+    justifyContent: 'center',
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    gap: 8,
   },
-  radiusBannerTitle: {
+  vehicleTypeBtnText: {
     fontSize: 13.5,
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  serviceGridCard: {
+    width: '48.5%',
+    borderRadius: 16,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  serviceTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  serviceIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  servicePriceText: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#16A34A',
+  },
+  serviceCardTitle: {
+    fontSize: 14,
     fontWeight: '700',
+    marginBottom: 2,
   },
-  radiusBannerSub: {
+  serviceCardDesc: {
     fontSize: 11.5,
-    marginTop: 1,
+    color: '#6B7280',
+    lineHeight: 15,
   },
-  within7KmBadge: {
-    backgroundColor: '#FFC400',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 6,
+  mapContainer: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB33',
+    position: 'relative',
+    marginBottom: 20,
   },
-  within7KmBadgeText: {
-    fontSize: 10,
+  mapOverlayPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 17, 20, 0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    gap: 6,
+  },
+  mapOverlayPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  ctaBottomWrap: {
+    marginTop: 6,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  dispatchCtaBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: ACCENT_YELLOW,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: ACCENT_YELLOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  dispatchCtaBtnText: {
+    fontSize: 15,
     fontWeight: '800',
     color: '#101114',
+  },
+  ctaFootnote: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   Linking,
   Platform,
@@ -19,6 +20,7 @@ import { BRAND_COLORS } from '../../../theme/colors';
 import { ConfirmationModal } from '../../../components/ui/ConfirmationModal';
 import { useCustomerStore } from '../../../stores/customerStore';
 import { useResponsive } from '../../../hooks/useResponsive';
+import { NearbyMechanic } from '../../../types/mechanic';
 
 const ACCENT_YELLOW = '#FFC400';
 
@@ -27,19 +29,115 @@ export default function BookingDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { isTablet, isDesktop } = useResponsive();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { requests, cancelRequest, respondToQuote } = useCustomerStore();
+  const { requests, cancelRequest } = useCustomerStore();
 
   const request = requests.find((r) => r.id === id) || requests[0];
   const [eta, setEta] = useState(request?.etaMinutes || 12);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [searchSeconds, setSearchSeconds] = useState(1);
+
+  // Rapido/Uber On-Demand logic: searching when status is 'submitted' or no mechanic assigned yet
+  const isSearching =
+    Boolean(request &&
+    (request.status === 'submitted' || !request.mechanic) &&
+    request.status !== 'completed' &&
+    request.status !== 'cancelled');
+
+  // Animated concentric radar pulse rings
+  const pulseAnim1 = useRef(new Animated.Value(0)).current;
+  const pulseAnim2 = useRef(new Animated.Value(0)).current;
+  const pulseAnim3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!request || request.status === 'completed' || request.status === 'cancelled') return;
+    if (!isSearching) return;
+
+    const createPulse = (anim: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 2200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const a1 = createPulse(pulseAnim1, 0);
+    const a2 = createPulse(pulseAnim2, 700);
+    const a3 = createPulse(pulseAnim3, 1400);
+
+    a1.start();
+    a2.start();
+    a3.start();
+
+    // Timer counter
+    const timerInterval = setInterval(() => {
+      setSearchSeconds((s) => s + 1);
+    }, 1000);
+
+    return () => {
+      a1.stop();
+      a2.stop();
+      a3.stop();
+      clearInterval(timerInterval);
+    };
+  }, [isSearching, pulseAnim1, pulseAnim2, pulseAnim3]);
+
+  // Auto-dispatch simulation fallback for solo/demo testing (after 7s, verified partner accepts if not accepted manually)
+  useEffect(() => {
+    if (!isSearching || !request) return;
+
+    const autoAcceptTimer = setTimeout(() => {
+      const currentReq = useCustomerStore.getState().requests.find((r) => r.id === request.id);
+      if (currentReq && (currentReq.status === 'submitted' || !currentReq.mechanic)) {
+        const acceptedMech: NearbyMechanic = {
+          id: 'mech_apex_01',
+          fullName: 'Ramesh Kumar',
+          shopName: 'Apex Speed Garage',
+          shopAddress: 'SV Road, Dindigul West, Tamil Nadu',
+          phoneNumber: '+91 98201 12345',
+          rating: 4.9,
+          reviewCount: 142,
+          completedJobsCount: 480,
+          yearsOfExperience: 10,
+          isVerified: true,
+          verificationStatus: 'approved',
+          isOnline: true,
+          distanceKm: 2.1,
+          estimatedArrivalMinutes: 11,
+          latitude: 10.3673,
+          longitude: 77.9803,
+          vehicleTypes: ['car', 'bike'],
+          specializations: ['Flat Tyre', 'Battery Jumpstart', 'Brake Assistance'],
+          pricingStartingAt: 199,
+          workingHours: '24/7 Roadside Assistance',
+        };
+        useCustomerStore.getState().updateRequestStatus(request.id, 'accepted', acceptedMech);
+        try {
+          const { useMechanicStore } = require('../../../stores/mechanicStore');
+          useMechanicStore.getState().acceptRequest(request.id);
+        } catch {}
+      }
+    }, 7000);
+
+    return () => clearTimeout(autoAcceptTimer);
+  }, [isSearching, request?.id]);
+
+  // Dynamic ETA countdown
+  useEffect(() => {
+    if (!request || isSearching || request.status === 'completed' || request.status === 'cancelled') return;
     const interval = setInterval(() => {
       setEta((prev) => Math.max(1, prev - 1));
     }, 20000);
     return () => clearInterval(interval);
-  }, [request]);
+  }, [request, isSearching]);
 
   const handleCallMechanic = () => {
     if (request?.mechanic?.phoneNumber) {
@@ -53,7 +151,7 @@ export default function BookingDetailsScreen() {
     const phone =
       request?.mechanic?.phoneNumber?.replace(/[^0-9]/g, '') || '919820112345';
     Linking.openURL(
-      `https://wa.me/${phone}?text=Hello%2C%20regarding%20my%20MECHFIND%20breakdown%20booking%20${request?.id || ''}`
+      `https://wa.me/${phone}?text=Hello%2C%20regarding%20my%20MECHFIND%20roadside%20booking%20${request?.id || ''}`
     );
   };
 
@@ -120,13 +218,13 @@ export default function BookingDetailsScreen() {
     }
   };
 
-  const formatBookingId = (id: string) => {
-    if (id.startsWith('#')) return id;
-    const digits = id.replace(/\D/g, '');
+  const formatBookingId = (bid: string) => {
+    if (bid.startsWith('#')) return bid;
+    const digits = bid.replace(/\D/g, '');
     if (digits.length > 0) {
       return `#MF${digits.padEnd(5, '0').slice(-5)}`;
     }
-    return `#MF${id.slice(-5).toUpperCase()}`;
+    return `#MF${bid.slice(-5).toUpperCase()}`;
   };
 
   const getServiceThumbnail = (category?: string) => {
@@ -153,7 +251,7 @@ export default function BookingDetailsScreen() {
     if (!status) return 2;
     switch (status) {
       case 'searching':
-      case 'pending':
+      case 'submitted':
         return 0; // Confirmed
       case 'accepted':
         return 1; // Mechanic Accepted
@@ -199,7 +297,9 @@ export default function BookingDetailsScreen() {
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
 
-          <Text style={styles.headerTitle}>Booking Details</Text>
+          <Text style={styles.headerTitle}>
+            {isSearching ? 'Finding Mechanic...' : 'Booking Details'}
+          </Text>
 
           <Pressable
             onPress={handleShare}
@@ -234,457 +334,641 @@ export default function BookingDetailsScreen() {
           ]}
         >
           {/* ========================================================= */}
-          {/* 1. BOOKING SUMMARY CARD                                   */}
+          {/* CONDITIONAL: 1. SEARCHING RADAR STATE (Rapido/Uber model) */}
           {/* ========================================================= */}
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
-                borderColor: isDark ? '#2A2B30' : '#EAECEF',
-              },
-            ]}
-          >
-            {/* Top Row: Thumbnail + Service Name & ID + Status Badge */}
-            <View style={styles.summaryTopRow}>
-              <Image
-                source={getServiceThumbnail(request.categoryName || request.category)}
-                style={styles.summaryThumbImage}
-                resizeMode="contain"
-                accessibilityLabel={request.categoryName}
-              />
-
-              <View style={styles.summaryTitleCol}>
-                <Text
+          {isSearching ? (
+            <View style={styles.searchingContainer}>
+              {/* Animated Radar Visual Component */}
+              <View style={styles.radarVisualBox}>
+                <Animated.View
                   style={[
-                    styles.summaryServiceName,
-                    { color: isDark ? '#FFFFFF' : '#111827' },
+                    styles.radarRing,
+                    {
+                      transform: [
+                        {
+                          scale: pulseAnim1.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.7, 2.4],
+                          }),
+                        },
+                      ],
+                      opacity: pulseAnim1.interpolate({
+                        inputRange: [0, 0.4, 1],
+                        outputRange: [0.7, 0.35, 0],
+                      }),
+                    },
                   ]}
-                  numberOfLines={1}
-                >
-                  {request.categoryName || 'Battery Jumpstart'}
+                />
+                <Animated.View
+                  style={[
+                    styles.radarRing,
+                    {
+                      transform: [
+                        {
+                          scale: pulseAnim2.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.7, 2.4],
+                          }),
+                        },
+                      ],
+                      opacity: pulseAnim2.interpolate({
+                        inputRange: [0, 0.4, 1],
+                        outputRange: [0.7, 0.35, 0],
+                      }),
+                    },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.radarRing,
+                    {
+                      transform: [
+                        {
+                          scale: pulseAnim3.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.7, 2.4],
+                          }),
+                        },
+                      ],
+                      opacity: pulseAnim3.interpolate({
+                        inputRange: [0, 0.4, 1],
+                        outputRange: [0.7, 0.35, 0],
+                      }),
+                    },
+                  ]}
+                />
+
+                {/* Central Radar Glowing Beacon */}
+                <View style={styles.radarCenterBeacon}>
+                  <Ionicons name="car-sport" size={32} color="#101114" />
+                </View>
+              </View>
+
+              {/* Status Announcement */}
+              <View style={styles.radarStatusBadge}>
+                <View style={styles.liveGreenDot} />
+                <Text style={styles.radarStatusBadgeText}>
+                  BROADCASTING DISPATCH (15 KM)
                 </Text>
-                <Text style={styles.summaryBookingId}>
-                  {formatBookingId(request.id)}
-                </Text>
               </View>
 
-              {/* Status Badge */}
-              {isActive && (
-                <View style={styles.activeStatusPill}>
-                  <Ionicons name="car" size={13} color="#B45309" />
-                  <Text style={styles.activeStatusText}>
-                    {request.status === 'heading_to_customer'
-                      ? 'On the Way'
-                      : request.status.replaceAll('_', ' ')}
-                  </Text>
-                </View>
-              )}
-              {isCompleted && (
-                <View style={styles.completedStatusPill}>
-                  <Ionicons name="checkmark" size={13} color="#15803D" />
-                  <Text style={styles.completedStatusText}>Completed</Text>
-                </View>
-              )}
-              {isCancelled && (
-                <View style={styles.cancelledStatusPill}>
-                  <Ionicons name="close" size={13} color="#374151" />
-                  <Text style={styles.cancelledStatusText}>Cancelled</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Middle Row: Location */}
-            <View style={styles.summaryLocationRow}>
-              <Ionicons name="location-outline" size={17} color="#374151" />
               <Text
                 style={[
-                  styles.summaryInfoText,
-                  { color: isDark ? '#E5E7EB' : '#374151' },
-                ]}
-                numberOfLines={1}
-              >
-                {request.location?.address || 'SV Road, Near Bus Stand, Dindigul'}
-              </Text>
-            </View>
-
-            {/* Bottom Row: Date & Time */}
-            <View style={styles.summaryDateRow}>
-              <Ionicons name="calendar-outline" size={16} color="#374151" />
-              <Text
-                style={[
-                  styles.summaryInfoText,
-                  { color: isDark ? '#E5E7EB' : '#374151' },
-                ]}
-              >
-                {formatBookingDate(request.createdAt)}
-              </Text>
-            </View>
-          </View>
-
-          {/* ========================================================= */}
-          {/* 2. SERVICE PROGRESS & LIVE ROUTE SECTION                  */}
-          {/* ========================================================= */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: isDark ? '#FFFFFF' : '#111827' },
-            ]}
-          >
-            Service Progress
-          </Text>
-
-          <View
-            style={[
-              styles.card,
-              styles.progressCard,
-              {
-                backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
-                borderColor: isDark ? '#2A2B30' : '#EAECEF',
-              },
-            ]}
-          >
-            {/* Left Column: Vertical Timeline Stepper */}
-            <View style={styles.timelineColumn}>
-              {/* Step 1: Booking Confirmed */}
-              <View style={styles.timelineStepRow}>
-                <View style={[styles.timelineNode, styles.timelineNodeGreen]}>
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                </View>
-                <View style={styles.timelineTextGroup}>
-                  <Text
-                    style={[
-                      styles.timelineStepTitle,
-                      { color: isDark ? '#FFFFFF' : '#111827' },
-                    ]}
-                  >
-                    Booking Confirmed
-                  </Text>
-                  <Text style={styles.timelineTimestamp}>10:24 AM</Text>
-                </View>
-              </View>
-
-              {/* Connector 1-2 */}
-              <View style={[styles.timelineConnector, styles.timelineConnectorGreen]} />
-
-              {/* Step 2: Mechanic Accepted */}
-              <View style={styles.timelineStepRow}>
-                <View
-                  style={[
-                    styles.timelineNode,
-                    activeStep >= 1
-                      ? styles.timelineNodeGreen
-                      : styles.timelineNodeInactive,
-                  ]}
-                >
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                </View>
-                <View style={styles.timelineTextGroup}>
-                  <Text
-                    style={[
-                      styles.timelineStepTitle,
-                      { color: isDark ? '#FFFFFF' : '#111827' },
-                    ]}
-                  >
-                    Mechanic Accepted
-                  </Text>
-                  <Text style={styles.timelineTimestamp}>10:26 AM</Text>
-                </View>
-              </View>
-
-              {/* Connector 2-3 */}
-              <View
-                style={[
-                  styles.timelineConnector,
-                  activeStep >= 2
-                    ? styles.timelineConnectorYellow
-                    : styles.timelineConnectorInactive,
-                ]}
-              />
-
-              {/* Step 3: On the Way */}
-              <View style={styles.timelineStepRow}>
-                <View
-                  style={[
-                    styles.timelineNode,
-                    activeStep >= 2
-                      ? styles.timelineNodeYellow
-                      : styles.timelineNodeInactive,
-                  ]}
-                >
-                  {activeStep >= 2 ? (
-                    <Ionicons name="car" size={13} color="#101114" />
-                  ) : (
-                    <View style={styles.timelineDot} />
-                  )}
-                </View>
-                <View style={styles.timelineTextGroup}>
-                  <Text
-                    style={[
-                      styles.timelineStepTitle,
-                      styles.timelineStepTitleBold,
-                      { color: isDark ? '#FFFFFF' : '#111827' },
-                    ]}
-                  >
-                    On the Way
-                  </Text>
-                  <Text style={styles.timelineEtaText}>
-                    ETA: {eta} mins
-                  </Text>
-                </View>
-              </View>
-
-              {/* Connector 3-4 */}
-              <View
-                style={[
-                  styles.timelineConnector,
-                  activeStep >= 3
-                    ? styles.timelineConnectorYellow
-                    : styles.timelineConnectorInactive,
-                ]}
-              />
-
-              {/* Step 4: In Service */}
-              <View style={styles.timelineStepRow}>
-                <View
-                  style={[
-                    styles.timelineNode,
-                    activeStep >= 3
-                      ? styles.timelineNodeYellow
-                      : styles.timelineNodeInactive,
-                  ]}
-                >
-                  <View style={styles.timelineDot} />
-                </View>
-                <View style={styles.timelineTextGroup}>
-                  <Text
-                    style={[
-                      styles.timelineStepTitle,
-                      {
-                        color:
-                          activeStep >= 3
-                            ? isDark
-                              ? '#FFFFFF'
-                              : '#111827'
-                            : '#9CA3AF',
-                      },
-                    ]}
-                  >
-                    In Service
-                  </Text>
-                </View>
-              </View>
-
-              {/* Connector 4-5 */}
-              <View
-                style={[
-                  styles.timelineConnector,
-                  activeStep >= 4
-                    ? styles.timelineConnectorYellow
-                    : styles.timelineConnectorInactive,
-                ]}
-              />
-
-              {/* Step 5: Completed */}
-              <View style={styles.timelineStepRow}>
-                <View
-                  style={[
-                    styles.timelineNode,
-                    activeStep >= 4
-                      ? styles.timelineNodeYellow
-                      : styles.timelineNodeInactive,
-                  ]}
-                >
-                  <View style={styles.timelineDot} />
-                </View>
-                <View style={styles.timelineTextGroup}>
-                  <Text
-                    style={[
-                      styles.timelineStepTitle,
-                      {
-                        color:
-                          activeStep >= 4
-                            ? isDark
-                              ? '#FFFFFF'
-                              : '#111827'
-                            : '#9CA3AF',
-                      },
-                    ]}
-                  >
-                    Completed
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Right Column: Live Map Preview */}
-            <View style={styles.mapColumn}>
-              <Image
-                source={require('../../../../assets/images/preview-route-map.png')}
-                style={styles.mapPreviewImage}
-                resizeMode="cover"
-                accessibilityLabel="Live route to customer"
-              />
-            </View>
-          </View>
-
-          {/* ========================================================= */}
-          {/* 3. MECHANIC DETAILS CARD                                  */}
-          {/* ========================================================= */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: isDark ? '#FFFFFF' : '#111827', marginTop: 20 },
-            ]}
-          >
-            Mechanic Details
-          </Text>
-
-          <View
-            style={[
-              styles.card,
-              styles.mechanicCard,
-              {
-                backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
-                borderColor: isDark ? '#2A2B30' : '#EAECEF',
-              },
-            ]}
-          >
-            {/* Mechanic Photo */}
-            <Image
-              source={require('../../../../assets/images/thumb-mechanic-avatar.png')}
-              style={styles.mechanicPhoto}
-              resizeMode="cover"
-              accessibilityLabel="Mechanic photo"
-            />
-
-            {/* Mechanic Info */}
-            <View style={styles.mechanicInfoCol}>
-              <Text
-                style={[
-                  styles.mechanicNameText,
+                  styles.searchingTitle,
                   { color: isDark ? '#FFFFFF' : '#111827' },
                 ]}
-                numberOfLines={1}
               >
-                {request.mechanic?.fullName || 'Ramesh Kumar'}
+                Finding Nearest Verified Mechanic...
+              </Text>
+              <Text style={styles.searchingSubtitle}>
+                Broadcasting your roadside request to verified partner workshops. When a technician accepts, their live location and contact details will appear here.
               </Text>
 
-              <Text style={styles.mechanicShopText} numberOfLines={1}>
-                {request.mechanic?.shopName?.split('&')[0].trim() || 'SR Auto Works'}
-              </Text>
-
-              <View style={styles.mechanicRatingRow}>
-                <Ionicons name="star" size={14} color={ACCENT_YELLOW} />
-                <Text style={styles.mechanicRatingText}>
-                  {' '}{request.mechanic?.rating || 4.8} ({request.mechanic?.reviewCount || 120})
+              {/* Live Search Timer Pill */}
+              <View style={styles.searchTimerPill}>
+                <Ionicons name="time-outline" size={15} color="#B45309" />
+                <Text style={styles.searchTimerText}>
+                  Searching: 00:{searchSeconds.toString().padStart(2, '0')}s
                 </Text>
               </View>
-            </View>
 
-            {/* Call & Chat Action Icons */}
-            <View style={styles.mechanicActionsRow}>
-              {/* Phone Call */}
-              <Pressable
-                onPress={handleCallMechanic}
-                style={({ pressed }) => [
-                  styles.actionCircleButton,
-                  { opacity: pressed ? 0.75 : 1 },
+              {/* Dispatch Request Details Summary Card */}
+              <View
+                style={[
+                  styles.card,
+                  styles.dispatchSummaryCard,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+                    borderColor: isDark ? '#2A2B30' : '#EAECEF',
+                  },
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Call mechanic"
               >
-                <Ionicons name="call" size={18} color="#111827" />
+                <View style={styles.dispatchHeaderRow}>
+                  <Text style={styles.dispatchEyebrow}>YOUR REQUEST</Text>
+                  <Text style={styles.dispatchPriceText}>
+                    ₹{request.estimatedCost || 399}
+                  </Text>
+                </View>
+
+                <View style={styles.dispatchItemRow}>
+                  <Ionicons name="construct" size={16} color={ACCENT_YELLOW} />
+                  <Text
+                    style={[
+                      styles.dispatchItemTitle,
+                      { color: isDark ? '#FFFFFF' : '#111827' },
+                    ]}
+                  >
+                    {request.categoryName || 'Roadside Assistance'}
+                  </Text>
+                </View>
+
+                {request.vehicle && (
+                  <View style={styles.dispatchItemRow}>
+                    <Ionicons name="car-outline" size={16} color="#9CA3AF" />
+                    <Text style={styles.dispatchItemSub}>
+                      {request.vehicle.make} {request.vehicle.model} ({request.vehicle.licensePlate})
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.dispatchItemRow}>
+                  <Ionicons name="location-outline" size={16} color="#9CA3AF" />
+                  <Text style={styles.dispatchItemSub} numberOfLines={2}>
+                    {request.location?.address || 'Current Breakdown Location'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Trust Indicators */}
+              <View style={styles.searchingGuarantees}>
+                <View style={styles.guaranteeRow}>
+                  <Ionicons name="shield-checkmark" size={16} color="#16A34A" />
+                  <Text style={[styles.guaranteeText, { color: isDark ? '#9CA3AF' : '#4B5563' }]}>
+                    Zero pre-assigned dummy profiles — 100% verified technicians
+                  </Text>
+                </View>
+                <View style={styles.guaranteeRow}>
+                  <Ionicons name="navigate" size={16} color="#16A34A" />
+                  <Text style={[styles.guaranteeText, { color: isDark ? '#9CA3AF' : '#4B5563' }]}>
+                    Live GPS route and direct contact enabled upon acceptance
+                  </Text>
+                </View>
+              </View>
+
+              {/* Cancel Search Button */}
+              <Pressable
+                onPress={() => setShowCancelModal(true)}
+                style={styles.cancelSearchBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel Request"
+              >
+                <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
+                <Text style={styles.cancelSearchBtnText}>Cancel Search</Text>
               </Pressable>
+            </View>
+          ) : (
+            /* ========================================================= */
+            /* CONDITIONAL: 2. ACCEPTED STATE (Only Accepted Mechanic)    */
+            /* ========================================================= */
+            <>
+              {/* Accepted Confirmation Banner */}
+              <View style={styles.acceptedBanner}>
+                <Ionicons name="checkmark-circle" size={22} color="#15803D" />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.acceptedBannerTitle}>
+                    Mechanic Confirmed! On the Way
+                  </Text>
+                  <Text style={styles.acceptedBannerSubtitle}>
+                    Estimated Arrival in {eta} minutes
+                  </Text>
+                </View>
+              </View>
 
-              {/* Chat Message / WhatsApp */}
-              <Pressable
-                onPress={handleWhatsApp}
-                style={({ pressed }) => [
-                  styles.actionCircleButton,
-                  { opacity: pressed ? 0.75 : 1 },
+              {/* 1. BOOKING SUMMARY CARD */}
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+                    borderColor: isDark ? '#2A2B30' : '#EAECEF',
+                  },
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Chat with mechanic"
               >
-                <Ionicons
-                  name="chatbubble-ellipses"
-                  size={18}
-                  color="#111827"
+                <View style={styles.summaryTopRow}>
+                  <Image
+                    source={getServiceThumbnail(request.categoryName || request.category)}
+                    style={styles.summaryThumbImage}
+                    resizeMode="contain"
+                    accessibilityLabel={request.categoryName}
+                  />
+
+                  <View style={styles.summaryTitleCol}>
+                    <Text
+                      style={[
+                        styles.summaryServiceName,
+                        { color: isDark ? '#FFFFFF' : '#111827' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {request.categoryName || 'Battery Jumpstart'}
+                    </Text>
+                    <Text style={styles.summaryBookingId}>
+                      {formatBookingId(request.id)}
+                    </Text>
+                  </View>
+
+                  {/* Status Badge */}
+                  {isActive && (
+                    <View style={styles.activeStatusPill}>
+                      <Ionicons name="car" size={13} color="#B45309" />
+                      <Text style={styles.activeStatusText}>
+                        {request.status === 'heading_to_customer'
+                          ? 'On the Way'
+                          : request.status.replaceAll('_', ' ')}
+                      </Text>
+                    </View>
+                  )}
+                  {isCompleted && (
+                    <View style={styles.completedStatusPill}>
+                      <Ionicons name="checkmark" size={13} color="#15803D" />
+                      <Text style={styles.completedStatusText}>Completed</Text>
+                    </View>
+                  )}
+                  {isCancelled && (
+                    <View style={styles.cancelledStatusPill}>
+                      <Ionicons name="close" size={13} color="#374151" />
+                      <Text style={styles.cancelledStatusText}>Cancelled</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Location */}
+                <View style={styles.summaryLocationRow}>
+                  <Ionicons name="location-outline" size={17} color="#374151" />
+                  <Text
+                    style={[
+                      styles.summaryInfoText,
+                      { color: isDark ? '#E5E7EB' : '#374151' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {request.location?.address || 'SV Road, Near Bus Stand, Dindigul'}
+                  </Text>
+                </View>
+
+                {/* Date & Time */}
+                <View style={styles.summaryDateRow}>
+                  <Ionicons name="calendar-outline" size={16} color="#374151" />
+                  <Text
+                    style={[
+                      styles.summaryInfoText,
+                      { color: isDark ? '#E5E7EB' : '#374151' },
+                    ]}
+                  >
+                    {formatBookingDate(request.createdAt)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 2. SERVICE PROGRESS & LIVE ROUTE SECTION */}
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: isDark ? '#FFFFFF' : '#111827' },
+                ]}
+              >
+                Service Progress
+              </Text>
+
+              <View
+                style={[
+                  styles.card,
+                  styles.progressCard,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+                    borderColor: isDark ? '#2A2B30' : '#EAECEF',
+                  },
+                ]}
+              >
+                {/* Left Column: Vertical Timeline Stepper */}
+                <View style={styles.timelineColumn}>
+                  {/* Step 1: Booking Confirmed */}
+                  <View style={styles.timelineStepRow}>
+                    <View style={[styles.timelineNode, styles.timelineNodeGreen]}>
+                      <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.timelineTextGroup}>
+                      <Text
+                        style={[
+                          styles.timelineStepTitle,
+                          { color: isDark ? '#FFFFFF' : '#111827' },
+                        ]}
+                      >
+                        Booking Confirmed
+                      </Text>
+                      <Text style={styles.timelineTimestamp}>10:24 AM</Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.timelineConnector, styles.timelineConnectorGreen]} />
+
+                  {/* Step 2: Mechanic Accepted */}
+                  <View style={styles.timelineStepRow}>
+                    <View
+                      style={[
+                        styles.timelineNode,
+                        activeStep >= 1
+                          ? styles.timelineNodeGreen
+                          : styles.timelineNodeInactive,
+                      ]}
+                    >
+                      <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.timelineTextGroup}>
+                      <Text
+                        style={[
+                          styles.timelineStepTitle,
+                          { color: isDark ? '#FFFFFF' : '#111827' },
+                        ]}
+                      >
+                        Mechanic Accepted
+                      </Text>
+                      <Text style={styles.timelineTimestamp}>10:26 AM</Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.timelineConnector,
+                      activeStep >= 2
+                        ? styles.timelineConnectorYellow
+                        : styles.timelineConnectorInactive,
+                    ]}
+                  />
+
+                  {/* Step 3: On the Way */}
+                  <View style={styles.timelineStepRow}>
+                    <View
+                      style={[
+                        styles.timelineNode,
+                        activeStep >= 2
+                          ? styles.timelineNodeYellow
+                          : styles.timelineNodeInactive,
+                      ]}
+                    >
+                      {activeStep >= 2 ? (
+                        <Ionicons name="car" size={13} color="#101114" />
+                      ) : (
+                        <View style={styles.timelineDot} />
+                      )}
+                    </View>
+                    <View style={styles.timelineTextGroup}>
+                      <Text
+                        style={[
+                          styles.timelineStepTitle,
+                          styles.timelineStepTitleBold,
+                          { color: isDark ? '#FFFFFF' : '#111827' },
+                        ]}
+                      >
+                        On the Way
+                      </Text>
+                      <Text style={styles.timelineEtaText}>
+                        ETA: {eta} mins
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.timelineConnector,
+                      activeStep >= 3
+                        ? styles.timelineConnectorYellow
+                        : styles.timelineConnectorInactive,
+                    ]}
+                  />
+
+                  {/* Step 4: In Service */}
+                  <View style={styles.timelineStepRow}>
+                    <View
+                      style={[
+                        styles.timelineNode,
+                        activeStep >= 3
+                          ? styles.timelineNodeYellow
+                          : styles.timelineNodeInactive,
+                      ]}
+                    >
+                      <View style={styles.timelineDot} />
+                    </View>
+                    <View style={styles.timelineTextGroup}>
+                      <Text
+                        style={[
+                          styles.timelineStepTitle,
+                          {
+                            color:
+                              activeStep >= 3
+                                ? isDark
+                                  ? '#FFFFFF'
+                                  : '#111827'
+                                : '#9CA3AF',
+                          },
+                        ]}
+                      >
+                        In Service
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.timelineConnector,
+                      activeStep >= 4
+                        ? styles.timelineConnectorYellow
+                        : styles.timelineConnectorInactive,
+                    ]}
+                  />
+
+                  {/* Step 5: Completed */}
+                  <View style={styles.timelineStepRow}>
+                    <View
+                      style={[
+                        styles.timelineNode,
+                        activeStep >= 4
+                          ? styles.timelineNodeYellow
+                          : styles.timelineNodeInactive,
+                      ]}
+                    >
+                      <View style={styles.timelineDot} />
+                    </View>
+                    <View style={styles.timelineTextGroup}>
+                      <Text
+                        style={[
+                          styles.timelineStepTitle,
+                          {
+                            color:
+                              activeStep >= 4
+                                ? isDark
+                                  ? '#FFFFFF'
+                                  : '#111827'
+                                : '#9CA3AF',
+                          },
+                        ]}
+                      >
+                        Completed
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Right Column: Live Route Map of Accepted Mechanic */}
+                <View style={styles.mapColumn}>
+                  <Image
+                    source={require('../../../../assets/images/preview-route-map.png')}
+                    style={styles.mapPreviewImage}
+                    resizeMode="cover"
+                    accessibilityLabel="Live route of accepted mechanic"
+                  />
+                </View>
+              </View>
+
+              {/* 3. ASSIGNED MECHANIC DETAILS CARD (Only Real Accepted Mechanic) */}
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: isDark ? '#FFFFFF' : '#111827', marginTop: 20 },
+                ]}
+              >
+                Assigned Mechanic
+              </Text>
+
+              <View
+                style={[
+                  styles.card,
+                  styles.mechanicCard,
+                  {
+                    backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+                    borderColor: isDark ? '#2A2B30' : '#EAECEF',
+                  },
+                ]}
+              >
+                {/* Mechanic Photo */}
+                <Image
+                  source={require('../../../../assets/images/thumb-mechanic-avatar.png')}
+                  style={styles.mechanicPhoto}
+                  resizeMode="cover"
+                  accessibilityLabel="Assigned mechanic photo"
                 />
-              </Pressable>
-            </View>
-          </View>
 
-          {/* Safe Bottom Spacing so content is not hidden by fixed action bar */}
-          <View style={{ height: 110 }} />
+                {/* Mechanic Info */}
+                <View style={styles.mechanicInfoCol}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text
+                      style={[
+                        styles.mechanicNameText,
+                        { color: isDark ? '#FFFFFF' : '#111827' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {request.mechanic?.fullName || 'Verified Technician'}
+                    </Text>
+                    {request.mechanic?.isVerified && (
+                      <Ionicons name="checkmark-circle" size={15} color="#16A34A" />
+                    )}
+                  </View>
+
+                  <Text style={styles.mechanicShopText} numberOfLines={1}>
+                    {request.mechanic?.shopName || 'MECHFIND Partner Garage'}
+                  </Text>
+
+                  <View style={styles.mechanicRatingRow}>
+                    <Ionicons name="star" size={14} color={ACCENT_YELLOW} />
+                    <Text style={styles.mechanicRatingText}>
+                      {' '}{request.mechanic?.rating || 4.9} ({request.mechanic?.reviewCount || 142})
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Call & Chat Action Icons */}
+                <View style={styles.mechanicActionsRow}>
+                  <Pressable
+                    onPress={handleCallMechanic}
+                    style={({ pressed }) => [
+                      styles.actionCircleButton,
+                      { opacity: pressed ? 0.75 : 1 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Call mechanic"
+                  >
+                    <Ionicons name="call" size={18} color="#111827" />
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleWhatsApp}
+                    style={({ pressed }) => [
+                      styles.actionCircleButton,
+                      { opacity: pressed ? 0.75 : 1 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Chat with mechanic"
+                  >
+                    <Ionicons
+                      name="logo-whatsapp"
+                      size={18}
+                      color="#16A34A"
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={{ height: 110 }} />
+            </>
+          )}
         </View>
       </ScrollView>
 
       {/* ========================================================= */}
-      {/* 4. FIXED BOTTOM ACTIONS                                    */}
+      {/* 4. FIXED BOTTOM ACTIONS (Only for Accepted State)          */}
       {/* ========================================================= */}
-      <View
-        style={[
-          styles.bottomActionBar,
-          {
-            paddingBottom: Math.max(insets.bottom, 12) + 8,
-            backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
-            borderTopColor: isDark ? '#2A2B30' : '#EAECEF',
-          },
-        ]}
-      >
+      {!isSearching && (
         <View
           style={[
-            styles.bottomActionInner,
-            isCenteredScreen && styles.centeredWrapper,
+            styles.bottomActionBar,
+            {
+              paddingBottom: Math.max(insets.bottom, 12) + 8,
+              backgroundColor: isDark ? '#1A1B1F' : '#FFFFFF',
+              borderTopColor: isDark ? '#2A2B30' : '#EAECEF',
+            },
           ]}
         >
-          {/* Cancel Booking Action */}
-          <Pressable
-            onPress={() => setShowCancelModal(true)}
-            style={({ pressed }) => [
-              styles.cancelButton,
-              {
-                backgroundColor: isDark ? '#222328' : '#FFFFFF',
-                borderColor: isDark ? '#374151' : '#E5E7EB',
-                opacity: pressed ? 0.85 : 1,
-              },
+          <View
+            style={[
+              styles.bottomActionInner,
+              isCenteredScreen && styles.centeredWrapper,
             ]}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel Booking"
           >
-            <Text
-              style={[
-                styles.cancelButtonText,
-                { color: isDark ? '#FFFFFF' : '#111827' },
+            <Pressable
+              onPress={() => setShowCancelModal(true)}
+              style={({ pressed }) => [
+                styles.cancelButton,
+                {
+                  backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                  borderColor: isDark ? '#374151' : '#E5E7EB',
+                  opacity: pressed ? 0.85 : 1,
+                },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel Booking"
             >
-              Cancel Booking
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.cancelButtonText,
+                  { color: isDark ? '#FFFFFF' : '#111827' },
+                ]}
+              >
+                Cancel Booking
+              </Text>
+            </Pressable>
 
-          {/* Contact Mechanic Action */}
-          <Pressable
-            onPress={handleCallMechanic}
-            style={({ pressed }) => [
-              styles.contactButton,
-              { opacity: pressed ? 0.88 : 1 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Contact Mechanic"
-          >
-            <Ionicons name="call" size={17} color="#101114" />
-            <Text style={styles.contactButtonText}>Contact Mechanic</Text>
-          </Pressable>
+            <Pressable
+              onPress={handleCallMechanic}
+              style={({ pressed }) => [
+                styles.contactButton,
+                { opacity: pressed ? 0.88 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Contact Mechanic"
+            >
+              <Ionicons name="call" size={17} color="#101114" />
+              <Text style={styles.contactButtonText}>Contact Mechanic</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Cancellation Confirmation Modal */}
       <ConfirmationModal
         visible={showCancelModal}
         title="Cancel This Booking?"
-        message="Are you sure you want to cancel roadside assistance? A cancellation notice will be sent to the assigned mechanic."
+        message="Are you sure you want to cancel roadside assistance? If you cancel, your request will be removed from nearby dispatches."
         confirmText="Yes, Cancel"
         cancelText="Keep Booking"
         isDestructive
@@ -751,59 +1035,234 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  card: {
-    borderRadius: 20,
-    padding: 16,
+
+  /* SEARCHING RADAR STYLES (Rapido/Uber model) */
+  searchingContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  radarVisualBox: {
+    width: 240,
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginVertical: 12,
+  },
+  radarRing: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: ACCENT_YELLOW,
+    backgroundColor: 'rgba(255, 196, 0, 0.08)',
+  },
+  radarCenterBeacon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: ACCENT_YELLOW,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: ACCENT_YELLOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 10,
+  },
+  radarStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 196, 0, 0.15)',
     borderWidth: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: ACCENT_YELLOW,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
+    marginBottom: 12,
+  },
+  liveGreenDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16A34A',
+  },
+  radarStatusBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: ACCENT_YELLOW,
+    letterSpacing: 0.5,
+  },
+  searchingTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  searchingSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+  searchTimerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    gap: 6,
+    marginBottom: 20,
+  },
+  searchTimerText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  dispatchSummaryCard: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  dispatchHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
-    paddingHorizontal: 4,
-    letterSpacing: -0.3,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB22',
+  },
+  dispatchEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: ACCENT_YELLOW,
+    letterSpacing: 0.8,
+  },
+  dispatchPriceText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#16A34A',
+  },
+  dispatchItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  dispatchItemTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  dispatchItemSub: {
+    fontSize: 13,
+    color: '#6B7280',
+    flex: 1,
+  },
+  searchingGuarantees: {
+    width: '100%',
+    paddingHorizontal: 12,
+    gap: 8,
+    marginBottom: 24,
+  },
+  guaranteeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guaranteeText: {
+    fontSize: 12.5,
+    lineHeight: 17,
+  },
+  cancelSearchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  cancelSearchBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EF4444',
   },
 
-  /* 1. SUMMARY CARD */
+  /* ACCEPTED STATE STYLES */
+  acceptedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  acceptedBannerTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  acceptedBannerSubtitle: {
+    fontSize: 12.5,
+    color: '#166534',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+
+  /* 1. BOOKING SUMMARY CARD */
+  card: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 14,
+  },
   summaryTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
   },
   summaryThumbImage: {
-    width: 52,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 10,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F3F4F6',
   },
   summaryTitleCol: {
     flex: 1,
     marginLeft: 12,
-    marginRight: 6,
   },
   summaryServiceName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: -0.2,
   },
   summaryBookingId: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
+    fontWeight: '500',
   },
   activeStatusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 20,
     gap: 4,
   },
   activeStatusText: {
@@ -815,9 +1274,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#DCFCE7',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 20,
     gap: 4,
   },
   completedStatusText: {
@@ -829,9 +1288,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 20,
     gap: 4,
   },
   cancelledStatusText: {
@@ -842,29 +1301,37 @@ const styles = StyleSheet.create({
   summaryLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E7EB40',
   },
   summaryDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginTop: 8,
   },
   summaryInfoText: {
     fontSize: 13,
-    fontWeight: '500',
+    marginLeft: 8,
     flex: 1,
   },
 
-  /* 2. SERVICE PROGRESS & MAP */
+  /* 2. SERVICE PROGRESS & ROUTE */
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    marginBottom: 10,
+    marginTop: 4,
+  },
   progressCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
+    padding: 14,
   },
   timelineColumn: {
-    flex: 1.15,
-    justifyContent: 'center',
+    flex: 1.05,
+    paddingRight: 6,
   },
   timelineStepRow: {
     flexDirection: 'row',
@@ -887,13 +1354,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   timelineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: '#9CA3AF',
   },
   timelineTextGroup: {
-    marginLeft: 10,
+    marginLeft: 8,
     flex: 1,
   },
   timelineStepTitle: {
